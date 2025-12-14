@@ -5,22 +5,25 @@ using Godot;
 namespace LibGodotSharpExample;
 
 /// <summary>
-/// Complete working example that creates a Godot window with a visible cube.
+/// Example demonstrating libgodot API integration with GodotSharp.
 /// 
-/// This integrates native libgodot initialization with GodotSharp API.
-/// Based on patterns from: https://github.com/migeran/libgodot
+/// API Reference: https://github.com/godotengine/godot/blob/08e6cd181f98f9ca3f58d89af0a54ce3768552d3/core/extension/libgodot.h
 /// 
-/// The example:
-/// 1. Initializes the native Godot engine
-/// 2. Creates a window
-/// 3. Sets up a 3D scene with a rotating red cube
-/// 4. Runs until the window is closed
+/// The libgodot API provides:
+/// - libgodot_create_godot_instance: Creates a Godot instance
+/// - libgodot_destroy_godot_instance: Destroys a Godot instance
+/// 
+/// The GodotInstance object (returned from create) has methods:
+/// - start(): Starts the instance
+/// - iteration(): Processes one frame
+/// - stop(): Stops the instance
+/// 
+/// NOTE: This example shows the API structure. Full integration requires a GDExtension
+/// initialization function to be passed to libgodot_create_godot_instance.
+/// For a working example, see: https://github.com/migeran/libgodot
 /// </summary>
 public class GodotNativeExample
 {
-    private static Node3D? mainScene;
-    private static MeshInstance3D? cube;
-
     /// <summary>
     /// Gets the expected library name for the current platform
     /// </summary>
@@ -36,395 +39,197 @@ public class GodotNativeExample
             return "libgodot (unknown platform)";
     }
 
-    // Platform-specific native function imports
+    // Platform-specific native function imports for libgodot API
+    // API reference: https://github.com/godotengine/godot/blob/master/core/extension/libgodot.h
     // We need separate declarations for each platform because DllImport requires compile-time constants
 
     /// <summary>
-    /// Native function to initialize Godot engine (Windows)
+    /// Creates a new Godot instance (Windows)
     /// </summary>
-    [DllImport("godot.windows.template_release.x86_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_initialize")]
-    private static extern int GodotInitialize_Windows(int argc, IntPtr argv);
+    [DllImport("godot.windows.template_release.x86_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "libgodot_create_godot_instance")]
+    private static extern IntPtr LibGodotCreateInstance_Windows(int argc, IntPtr argv, IntPtr initFunc);
 
     /// <summary>
-    /// Native function to process one frame (Windows)
+    /// Destroys an existing Godot instance (Windows)
     /// </summary>
-    [DllImport("godot.windows.template_release.x86_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_iterate")]
-    private static extern bool GodotIterate_Windows();
+    [DllImport("godot.windows.template_release.x86_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "libgodot_destroy_godot_instance")]
+    private static extern void LibGodotDestroyInstance_Windows(IntPtr instance);
 
     /// <summary>
-    /// Native function to finalize and cleanup (Windows)
+    /// Creates a new Godot instance (Linux)
     /// </summary>
-    [DllImport("godot.windows.template_release.x86_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_finalize")]
-    private static extern void GodotFinalize_Windows();
+    [DllImport("libgodot.linuxbsd.template_release.x86_64.so", CallingConvention = CallingConvention.Cdecl, EntryPoint = "libgodot_create_godot_instance")]
+    private static extern IntPtr LibGodotCreateInstance_Linux(int argc, IntPtr argv, IntPtr initFunc);
 
     /// <summary>
-    /// Native function to initialize Godot engine (Linux)
+    /// Destroys an existing Godot instance (Linux)
     /// </summary>
-    [DllImport("libgodot.linuxbsd.template_release.x86_64.so", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_initialize")]
-    private static extern int GodotInitialize_Linux(int argc, IntPtr argv);
+    [DllImport("libgodot.linuxbsd.template_release.x86_64.so", CallingConvention = CallingConvention.Cdecl, EntryPoint = "libgodot_destroy_godot_instance")]
+    private static extern void LibGodotDestroyInstance_Linux(IntPtr instance);
 
     /// <summary>
-    /// Native function to process one frame (Linux)
+    /// Creates a new Godot instance (macOS)
     /// </summary>
-    [DllImport("libgodot.linuxbsd.template_release.x86_64.so", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_iterate")]
-    private static extern bool GodotIterate_Linux();
+    [DllImport("libgodot.macos.template_release.universal.dylib", CallingConvention = CallingConvention.Cdecl, EntryPoint = "libgodot_create_godot_instance")]
+    private static extern IntPtr LibGodotCreateInstance_macOS(int argc, IntPtr argv, IntPtr initFunc);
 
     /// <summary>
-    /// Native function to finalize and cleanup (Linux)
+    /// Destroys an existing Godot instance (macOS)
     /// </summary>
-    [DllImport("libgodot.linuxbsd.template_release.x86_64.so", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_finalize")]
-    private static extern void GodotFinalize_Linux();
-
-    /// <summary>
-    /// Native function to initialize Godot engine (macOS)
-    /// </summary>
-    [DllImport("libgodot.macos.template_release.universal.dylib", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_initialize")]
-    private static extern int GodotInitialize_macOS(int argc, IntPtr argv);
-
-    /// <summary>
-    /// Native function to process one frame (macOS)
-    /// </summary>
-    [DllImport("libgodot.macos.template_release.universal.dylib", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_iterate")]
-    private static extern bool GodotIterate_macOS();
-
-    /// <summary>
-    /// Native function to finalize and cleanup (macOS)
-    /// </summary>
-    [DllImport("libgodot.macos.template_release.universal.dylib", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_finalize")]
-    private static extern void GodotFinalize_macOS();
+    [DllImport("libgodot.macos.template_release.universal.dylib", CallingConvention = CallingConvention.Cdecl, EntryPoint = "libgodot_destroy_godot_instance")]
+    private static extern void LibGodotDestroyInstance_macOS(IntPtr instance);
 
     // Platform-agnostic wrappers that call the correct platform-specific function
-    private static int GodotInitialize(int argc, IntPtr argv)
+    private static IntPtr LibGodotCreateInstance(int argc, IntPtr argv, IntPtr initFunc)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return GodotInitialize_Windows(argc, argv);
+            return LibGodotCreateInstance_Windows(argc, argv, initFunc);
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            return GodotInitialize_Linux(argc, argv);
+            return LibGodotCreateInstance_Linux(argc, argv, initFunc);
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return GodotInitialize_macOS(argc, argv);
+            return LibGodotCreateInstance_macOS(argc, argv, initFunc);
         else
             throw new PlatformNotSupportedException($"Platform not supported: {RuntimeInformation.OSDescription}");
     }
 
-    private static bool GodotIterate()
+    private static void LibGodotDestroyInstance(IntPtr instance)
     {
         if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            return GodotIterate_Windows();
+            LibGodotDestroyInstance_Windows(instance);
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            return GodotIterate_Linux();
+            LibGodotDestroyInstance_Linux(instance);
         else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            return GodotIterate_macOS();
-        else
-            throw new PlatformNotSupportedException($"Platform not supported: {RuntimeInformation.OSDescription}");
-    }
-
-    private static void GodotFinalize()
-    {
-        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-            GodotFinalize_Windows();
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-            GodotFinalize_Linux();
-        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
-            GodotFinalize_macOS();
+            LibGodotDestroyInstance_macOS(instance);
         else
             throw new PlatformNotSupportedException($"Platform not supported: {RuntimeInformation.OSDescription}");
     }
 
     /// <summary>
-    /// Main entry point - creates a Godot window with a rotating cube
+    /// Main entry point - demonstrates libgodot API structure
     /// </summary>
     public static void Run()
     {
-        Console.WriteLine("=== Godot Window with 3D Cube Example ===\n");
-        Console.WriteLine("This example creates a Godot window displaying a rotating red cube.");
-        Console.WriteLine("Based on patterns from: https://github.com/migeran/libgodot\n");
+        Console.WriteLine("=== libgodot API Integration Example ===\n");
+        Console.WriteLine("Demonstrates the correct libgodot API (Godot 4.6+)");
+        Console.WriteLine("API Reference: https://github.com/godotengine/godot/blob/08e6cd181f98f9ca3f58d89af0a54ce3768552d3/core/extension/libgodot.h\n");
+
+        Console.WriteLine($"Detected platform: {RuntimeInformation.OSDescription}");
+        Console.WriteLine($"Expected library: {GetExpectedLibraryName()}\n");
 
         try
         {
-            // Step 1: Initialize native Godot engine
-            Console.WriteLine("Initializing Godot engine...");
-            if (!InitializeNativeEngine())
-            {
-                Console.WriteLine("⚠ Native Godot library not available.");
-                Console.WriteLine($"  Detected platform: {RuntimeInformation.OSDescription}");
-                Console.WriteLine($"  Looking for: {GetExpectedLibraryName()}");
-                Console.WriteLine("\n  Native libraries by platform:");
-                Console.WriteLine("  - Windows: godot.windows.template_release.x86_64.dll");
-                Console.WriteLine("  - Linux: libgodot.linuxbsd.template_release.x86_64.so");
-                Console.WriteLine("  - macOS: libgodot.macos.template_release.universal.dylib\n");
-                ShowIntegrationPattern();
-                return;
-            }
-            Console.WriteLine("✓ Godot engine initialized\n");
-
-            // Step 2: Create window and set up scene
-            Console.WriteLine("Creating window and setting up 3D scene...");
-            if (!SetupSceneAndWindow())
-            {
-                Console.WriteLine("⚠ Scene setup failed - GodotSharp bridge not fully initialized");
-                Console.WriteLine("  This requires proper integration between native engine and C# runtime.\n");
-                Cleanup();
-                ShowIntegrationPattern();
-                return;
-            }
-            Console.WriteLine("✓ Window created with 3D scene\n");
-
-            // Step 3: Run main loop until window is closed
-            Console.WriteLine("Running application...");
-            Console.WriteLine("A window should appear with a rotating red cube.");
-            Console.WriteLine("Close the window to exit.\n");
-            RunMainLoop();
-
-            // Step 4: Cleanup
-            Console.WriteLine("\nShutting down...");
-            Cleanup();
-            Console.WriteLine("✓ Application closed\n");
-        }
-        catch (DllNotFoundException ex)
-        {
-            Console.WriteLine($"\n⚠ Native library not found: {ex.Message}");
-            Console.WriteLine($"   Platform: {RuntimeInformation.OSDescription}");
-            Console.WriteLine($"   Looking for: {GetExpectedLibraryName()}\n");
-            Console.WriteLine("To build the native library, run:");
-            Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj\n");
-            ShowIntegrationPattern();
-        }
-        catch (Exception ex)
-        {
-            Console.Error.WriteLine($"\nError: {ex.Message}");
-            Console.Error.WriteLine(ex.StackTrace);
+            Console.WriteLine("Attempting to create Godot instance...");
             
-            try
-            {
-                Cleanup();
-            }
-            catch { }
+            // The correct libgodot API requires:
+            // 1. Command line arguments (argc, argv)
+            // 2. GDExtension initialization function pointer
             
-            throw;
-        }
-    }
-
-    /// <summary>
-    /// Initialize the native Godot engine
-    /// Following the pattern from libgodot C++/Swift examples
-    /// </summary>
-    private static bool InitializeNativeEngine()
-    {
-        try
-        {
-            // Prepare arguments (application name)
+            // Prepare argv
             IntPtr argv = Marshal.StringToHGlobalAnsi("LibGodotSharpExample");
             
             try
             {
-                int result = GodotInitialize(1, argv);
+                // NOTE: The third parameter (p_init_func) is a GDExtension initialization function
+                // This is typically provided by a GDExtension plugin
+                // For a standalone C# application, this requires additional setup
+                IntPtr gdInstance = LibGodotCreateInstance(1, argv, IntPtr.Zero);
                 
-                if (result != 0)
+                if (gdInstance == IntPtr.Zero)
                 {
-                    Console.WriteLine($"   ⚠ Initialization returned code: {result}");
-                    return false;
+                    Console.WriteLine("✗ Failed to create Godot instance");
+                    Console.WriteLine("\nThis is expected without a GDExtension initialization function.");
+                    ShowAPIDocumentation();
+                    return;
                 }
                 
-                return true;
+                Console.WriteLine("✓ Godot instance created successfully!");
+                
+                // With a valid GodotInstance, you would:
+                // 1. Cast it to a GodotInstance object (through GodotSharp)
+                // 2. Call instance.Start()
+                // 3. Loop calling instance.Iteration()
+                // 4. Call instance.Stop()
+                
+                // Cleanup
+                LibGodotDestroyInstance(gdInstance);
+                Console.WriteLine("✓ Godot instance destroyed");
             }
             finally
             {
                 Marshal.FreeHGlobal(argv);
             }
         }
-        catch (DllNotFoundException)
+        catch (DllNotFoundException ex)
         {
-            return false;
+            Console.WriteLine($"✗ Native library not found: {ex.Message}\n");
+            Console.WriteLine($"Looking for: {GetExpectedLibraryName()}");
+            Console.WriteLine("\nTo build the native library:");
+            Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj\n");
+            ShowAPIDocumentation();
         }
-    }
-
-    /// <summary>
-    /// Create window and set up the 3D scene using GodotSharp API
-    /// </summary>
-    private static bool SetupSceneAndWindow()
-    {
-        try
+        catch (EntryPointNotFoundException ex)
         {
-            // Get the main SceneTree from the engine
-            var sceneTree = Engine.GetMainLoop() as SceneTree;
-            if (sceneTree == null)
-            {
-                Console.WriteLine("  ⚠ Could not get SceneTree from engine");
-                return false;
-            }
-
-            // Create the main 3D scene container
-            mainScene = new Node3D();
-            mainScene.Name = "MainScene";
-
-            // Add a directional light so we can see the cube
-            var light = new DirectionalLight3D();
-            light.Name = "Sun";
-            light.Position = new Vector3(5, 5, 5);
-            light.LookAt(Vector3.Zero, Vector3.Up);
-            light.LightEnergy = 1.0f;
-            mainScene.AddChild(light);
-
-            // Add an environment light for better visibility
-            var worldEnvironment = new WorldEnvironment();
-            var environment = new Godot.Environment();
-            environment.BackgroundMode = Godot.Environment.BGMode.Color;
-            environment.BackgroundColor = new Color(0.1f, 0.1f, 0.15f);
-            environment.AmbientLightSource = Godot.Environment.AmbientSource.Color;
-            environment.AmbientLightColor = new Color(0.3f, 0.3f, 0.3f);
-            worldEnvironment.Environment = environment;
-            mainScene.AddChild(worldEnvironment);
-
-            // Create and configure the camera
-            var camera = new Camera3D();
-            camera.Name = "MainCamera";
-            camera.Position = new Vector3(0, 1, 4);
-            camera.LookAt(Vector3.Zero, Vector3.Up);
-            mainScene.AddChild(camera);
-
-            // Create the red cube
-            cube = new MeshInstance3D();
-            cube.Name = "RedCube";
-            
-            var boxMesh = new BoxMesh();
-            boxMesh.Size = new Vector3(1, 1, 1);
-            cube.Mesh = boxMesh;
-
-            // Create and apply a red material
-            var material = new StandardMaterial3D();
-            material.AlbedoColor = new Color(0.8f, 0.2f, 0.2f);
-            material.Metallic = 0.5f;
-            material.Roughness = 0.4f;
-            cube.SetSurfaceOverrideMaterial(0, material);
-
-            cube.Position = Vector3.Zero;
-            mainScene.AddChild(cube);
-
-            // Add the scene to the scene tree
-            sceneTree.Root.AddChild(mainScene);
-
-            // Configure the window
-            var window = sceneTree.Root;
-            window.Title = "LibGodotSharp Example - Rotating Cube";
-            window.Size = new Vector2I(800, 600);
-
-            Console.WriteLine("  Scene hierarchy created:");
-            Console.WriteLine("    MainScene (Node3D)");
-            Console.WriteLine("    ├── Sun (DirectionalLight3D)");
-            Console.WriteLine("    ├── WorldEnvironment");
-            Console.WriteLine("    ├── MainCamera (Camera3D)");
-            Console.WriteLine("    └── RedCube (MeshInstance3D)");
-
-            return true;
+            Console.WriteLine($"✗ Entry point not found: {ex.Message}\n");
+            Console.WriteLine("This error occurs if:");
+            Console.WriteLine("  1. The DLL is not built with libgodot support");
+            Console.WriteLine("  2. The Godot version doesn't support libgodot (need 4.6+)");
+            Console.WriteLine("  3. The DLL was built without library_type=shared_library\n");
+            ShowAPIDocumentation();
         }
         catch (Exception ex)
         {
-            Console.WriteLine($"  ⚠ Error setting up scene: {ex.Message}");
-            return false;
+            Console.Error.WriteLine($"\n✗ Error: {ex.Message}");
+            Console.Error.WriteLine(ex.StackTrace);
         }
     }
 
     /// <summary>
-    /// Main loop - runs until window is closed
+    /// Shows the correct libgodot API documentation and usage
     /// </summary>
-    private static void RunMainLoop()
+    private static void ShowAPIDocumentation()
     {
-        int frameCount = 0;
-        float rotationSpeed = 1.0f;
-        
-        try
-        {
-            // Main game loop - continues until user closes the window
-            while (true)
-            {
-                // Process one frame (events, updates, rendering)
-                bool shouldContinue = GodotIterate();
-                
-                if (!shouldContinue)
-                {
-                    // User closed the window or requested quit
-                    Console.WriteLine($"Window closed after {frameCount} frames");
-                    break;
-                }
-                
-                // Rotate the cube for visual effect
-                if (cube != null)
-                {
-                    float delta = 0.016f; // Approximate frame time (60 FPS)
-                    cube.RotateY(delta * rotationSpeed);
-                    cube.RotateX(delta * rotationSpeed * 0.5f);
-                }
-                
-                frameCount++;
-                
-                // Print status every 5 seconds (approx 300 frames at 60 FPS)
-                if (frameCount % 300 == 0)
-                {
-                    Console.WriteLine($"Running... {frameCount} frames processed");
-                }
-            }
-        }
-        catch (DllNotFoundException)
-        {
-            Console.WriteLine("⚠ Native iterate function not available");
-        }
-        catch (Exception ex)
-        {
-            Console.WriteLine($"⚠ Error in main loop: {ex.Message}");
-        }
-    }
-
-    /// <summary>
-    /// Cleanup and finalize
-    /// </summary>
-    private static void Cleanup()
-    {
-        try
-        {
-            GodotFinalize();
-        }
-        catch (DllNotFoundException)
-        {
-            // Expected if library not loaded
-        }
-    }
-
-    /// <summary>
-    /// Shows the integration pattern when native library is not available
-    /// </summary>
-    private static void ShowIntegrationPattern()
-    {
-        Console.WriteLine("\n=== Integration Pattern ===\n");
-        Console.WriteLine("The complete integration follows this pattern:");
+        Console.WriteLine("\n=== libgodot API Documentation ===\n");
+        Console.WriteLine("The libgodot API (Godot 4.6+) provides two main functions:");
         Console.WriteLine();
-        Console.WriteLine("1. Native Initialization (C API):");
-        Console.WriteLine("   IntPtr argv = Marshal.StringToHGlobalAnsi(\"AppName\");");
-        Console.WriteLine("   int result = GodotInitialize(1, argv);");
-        Console.WriteLine("   Marshal.FreeHGlobal(argv);");
+        Console.WriteLine("1. libgodot_create_godot_instance:");
+        Console.WriteLine("   GDExtensionObjectPtr libgodot_create_godot_instance(");
+        Console.WriteLine("       int p_argc,");
+        Console.WriteLine("       char *p_argv[],");
+        Console.WriteLine("       GDExtensionInitializationFunction p_init_func");
+        Console.WriteLine("   );");
         Console.WriteLine();
-        Console.WriteLine("2. Scene Setup (GodotSharp API):");
-        Console.WriteLine("   var sceneTree = Engine.GetMainLoop() as SceneTree;");
-        Console.WriteLine("   var mainScene = new Node3D();");
-        Console.WriteLine("   var camera = new Camera3D { Position = new Vector3(0, 0, 5) };");
-        Console.WriteLine("   mainScene.AddChild(camera);");
-        Console.WriteLine("   // ... add more nodes");
-        Console.WriteLine("   sceneTree.Root.AddChild(mainScene);");
+        Console.WriteLine("   Creates a GodotInstance object. Requires:");
+        Console.WriteLine("   - Command line arguments (argc, argv)");
+        Console.WriteLine("   - GDExtension initialization function (from your plugin/app)");
         Console.WriteLine();
-        Console.WriteLine("3. Main Loop (Native + GodotSharp):");
-        Console.WriteLine("   while (true)");
-        Console.WriteLine("   {");
-        Console.WriteLine("       if (!GodotIterate()) break;");
-        Console.WriteLine("       // Optional: Custom game logic here");
+        Console.WriteLine("2. libgodot_destroy_godot_instance:");
+        Console.WriteLine("   void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance);");
+        Console.WriteLine();
+        Console.WriteLine("   Destroys the GodotInstance and cleans up.");
+        Console.WriteLine();
+        Console.WriteLine("The returned GodotInstance object has methods:");
+        Console.WriteLine("   - bool start()      : Starts the Godot instance");
+        Console.WriteLine("   - bool iteration()  : Processes one frame");
+        Console.WriteLine("   - void stop()       : Stops the instance");
+        Console.WriteLine();
+        Console.WriteLine("Example usage (from GodotInstance):");
+        Console.WriteLine("   // C# pseudo-code");
+        Console.WriteLine("   IntPtr instancePtr = LibGodotCreateInstance(argc, argv, initFunc);");
+        Console.WriteLine("   GodotInstance instance = (GodotInstance)GD.InstanceFromId(...);");
+        Console.WriteLine("   ");
+        Console.WriteLine("   instance.Start();");
+        Console.WriteLine("   while (instance.Iteration()) {");
+        Console.WriteLine("       // Game loop");
         Console.WriteLine("   }");
+        Console.WriteLine("   instance.Stop();");
+        Console.WriteLine("   ");
+        Console.WriteLine("   LibGodotDestroyInstance(instancePtr);");
         Console.WriteLine();
-        Console.WriteLine("4. Cleanup (Native):");
-        Console.WriteLine("   GodotFinalize();");
+        Console.WriteLine("For working examples, see:");
+        Console.WriteLine("  - https://github.com/migeran/libgodot (C++/Swift examples)");
+        Console.WriteLine("  - https://github.com/godotengine/godot/blob/master/core/extension/libgodot.h");
         Console.WriteLine();
-        Console.WriteLine("This approach combines:");
-        Console.WriteLine("  • Low-level native control (initialization, main loop)");
-        Console.WriteLine("  • High-level C# API (scene creation, game logic)");
-        Console.WriteLine();
-        Console.WriteLine("See libgodot examples for working C++ and Swift implementations:");
-        Console.WriteLine("https://github.com/migeran/libgodot");
+        Console.WriteLine("To build libgodot-enabled Godot:");
+        Console.WriteLine("  scons platform=<platform> target=template_release library_type=shared_library");
     }
 }
