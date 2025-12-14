@@ -22,44 +22,93 @@ This cross-platform C# tool:
 
 ## Requirements
 
+### Basic Requirements (all platforms)
 - .NET 10.0 SDK or later
 - SCons (for building Godot)
 - Python 3 (for building C# assemblies)
 - Git
-- C++ compiler (GCC/Clang/MSVC)
+
+### Platform-Specific Compilers
+
+**Linux:**
+- GCC 9+ or Clang 6+
+- Development libraries: `build-essential`, `pkg-config`, `libx11-dev`, `libxcursor-dev`, `libxinerama-dev`, `libgl1-mesa-dev`, `libglu-dev`, `libasound2-dev`, `libpulse-dev`, `libudev-dev`, `libxi-dev`, `libxrandr-dev`
+
+**Windows:**
+- Visual Studio 2019+ with C++ build tools
+- OR MinGW-w64
+
+**macOS:**
+- Xcode command line tools
+
+### Cross-Compilation (Optional)
+
+To build for multiple platforms from Windows using `--all`:
+- Install MinGW-w64 for Windows builds
+- For Linux cross-compilation: Install WSL2 with Linux toolchain or use cross-compilation tools
+- For macOS cross-compilation: OSXCross toolchain (advanced, not commonly used)
+
+**Tip:** For reliable multi-platform builds, use separate native environments or CI/CD pipelines for each platform.
 
 ## Usage
 
-### Running from source:
+### Basic usage (current platform only):
 
 ```bash
+# From solution root
+dotnet run --project GodotBuilder/GodotBuilder.csproj
+
+# From GodotBuilder directory
 cd GodotBuilder
 dotnet run
+```
+
+### Build for all platforms (Windows, Linux, macOS):
+
+```bash
+dotnet run --project GodotBuilder/GodotBuilder.csproj -- --all
+```
+
+**Note:** Cross-compilation requires appropriate toolchains. On Windows, you can build Linux libraries if you have the necessary cross-compilation tools installed.
+
+### Show help:
+
+```bash
+dotnet run --project GodotBuilder/GodotBuilder.csproj -- --help
 ```
 
 ### Running from build:
 
 ```bash
 dotnet build -c Release
-cd bin/Release/net10.0
-./GodotBuilder  # or GodotBuilder.exe on Windows
-```
-
-### From solution:
-
-```bash
-dotnet run --project GodotBuilder/GodotBuilder.csproj
+cd GodotBuilder/bin/Release/net10.0
+./GodotBuilder          # Current platform
+./GodotBuilder --all    # All platforms
 ```
 
 ## How It Works
 
 1. **Platform Detection**: Automatically detects the current OS and sets appropriate build parameters
 2. **Godot Clone**: Clones the Godot repository if not already present
-3. **Library Build**: Builds Godot as a shared library (`.so`, `.dll`, or `.dylib`)
-4. **Editor Build**: Builds the Godot editor with Mono/C# support
+3. **Library Build**: Builds Godot as a shared library for the target platform(s)
+   - Current platform only (default)
+   - All platforms (with `--all` flag)
+4. **Editor Build**: Builds the Godot editor with Mono/C# support (for current platform)
 5. **Glue Generation**: Runs the editor to generate C# glue code
 6. **Assembly Build**: Builds the GodotSharp assemblies using Python script
-7. **File Copy**: Copies native libraries to `lib/` and GodotSharp assemblies to `src/GodotAssemblies/`
+7. **File Copy**: Copies native libraries to `lib/<platform>/` and GodotSharp assemblies to `src/GodotAssemblies/`
+
+### Multi-Platform Build
+
+When using the `--all` flag, the builder will:
+- Build the native library for Windows, Linux, and macOS
+- Build the editor and C# assemblies for the current platform (these are platform-independent)
+- Provide a summary of successful and failed builds
+
+This is useful for:
+- Creating releases with libraries for all platforms
+- CI/CD pipelines that need to generate all platform binaries
+- Developers who want to test their application on multiple platforms
 
 ## Output Structure
 

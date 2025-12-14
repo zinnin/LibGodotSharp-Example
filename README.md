@@ -21,8 +21,12 @@ cd src
 dotnet build
 dotnet run
 
-# Optional: Build Godot using the C# builder (takes 30-60 minutes)
+# Optional: Build Godot native libraries
+# For current platform only (30-60 minutes):
 dotnet run --project GodotBuilder/GodotBuilder.csproj
+
+# For all platforms (Windows, Linux, macOS) - requires cross-compilation tools:
+dotnet run --project GodotBuilder/GodotBuilder.csproj -- --all
 ```
 
 See [BUILD.md](BUILD.md) for detailed build instructions.

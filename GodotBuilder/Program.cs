@@ -33,16 +33,37 @@ class Program
             BuildDir = Path.Combine(ScriptDir, "lib");
             GodotAssembliesDir = Path.Combine(ScriptDir, "src", "GodotAssemblies");
 
-            Console.WriteLine("Building Godot as a library...");
+            // Parse command line arguments
+            bool buildAll = args.Length > 0 && (args[0] == "--all" || args[0] == "-a");
+            bool showHelp = args.Length > 0 && (args[0] == "--help" || args[0] == "-h");
+
+            if (showHelp)
+            {
+                ShowHelp();
+                return 0;
+            }
+
+            Console.WriteLine("GodotBuilder - Build Godot as a library with C# bindings");
+            Console.WriteLine("==========================================================");
             Console.WriteLine($"Script directory: {ScriptDir}");
             Console.WriteLine($"Godot directory: {GodotDir}");
             Console.WriteLine($"Native libs output: {BuildDir}");
             Console.WriteLine($"GodotSharp output: {GodotAssembliesDir}");
             Console.WriteLine();
 
-            // Detect platform
+            // Detect current platform
             DetectPlatform();
-            Console.WriteLine($"Detected platform: {Platform} (lib ext: {LibExt}, dir: {PlatformDir})");
+            Console.WriteLine($"Current platform: {Platform}");
+            
+            if (buildAll)
+            {
+                Console.WriteLine("Build mode: ALL PLATFORMS (Windows, Linux, macOS)");
+            }
+            else
+            {
+                Console.WriteLine($"Build mode: CURRENT PLATFORM ONLY ({Platform})");
+                Console.WriteLine("  (Use --all to build for all platforms)");
+            }
             Console.WriteLine();
 
             // Clone Godot if needed
@@ -58,44 +79,23 @@ class Program
             RunCommand("git", "checkout master", GodotDir);
             Console.WriteLine();
 
-            // Build Godot library
-            Console.WriteLine($"Building Godot library for {Platform}...");
-            RunCommand("scons", $"platform={Platform} target=template_release library_type=shared_library", GodotDir);
-            Console.WriteLine();
+            if (buildAll)
+            {
+                // Build for all platforms
+                BuildAllPlatforms();
+            }
+            else
+            {
+                // Build for current platform only
+                BuildForPlatform(Platform, LibExt, PlatformDir);
+            }
 
-            // Copy library files
-            Directory.CreateDirectory(Path.Combine(BuildDir, PlatformDir));
-            CopyLibraryFiles();
-            Console.WriteLine();
-
-            Console.WriteLine("Godot library build complete!");
-            Console.WriteLine($"Library files are in: {BuildDir}");
-            Console.WriteLine();
-
-            // Build GodotSharp bindings
-            Console.WriteLine("Building GodotSharp bindings...");
-            Console.WriteLine("Building Godot editor with Mono support...");
-            RunCommand("scons", $"platform={Platform} target=editor module_mono_enabled=yes", GodotDir);
-            Console.WriteLine();
-
-            // Generate C# glue
-            Console.WriteLine("Generating C# glue code...");
-            GenerateCSharpGlue();
-            Console.WriteLine();
-
-            // Build C# assemblies
-            Console.WriteLine("Building C# assemblies...");
-            BuildCSharpAssemblies();
-            Console.WriteLine();
-
-            // Copy GodotSharp assemblies
-            Console.WriteLine("Copying GodotSharp assemblies to output directory...");
-            CopyGodotSharpAssemblies();
-            Console.WriteLine();
-
+            Console.WriteLine("\n========================================");
             Console.WriteLine("Build complete!");
-            Console.WriteLine($"Library files are in: {Path.Combine(BuildDir, PlatformDir)}");
+            Console.WriteLine("========================================");
+            Console.WriteLine($"Library files are in: {BuildDir}");
             Console.WriteLine($"GodotSharp assemblies are in: {GodotAssembliesDir}");
+            Console.WriteLine();
 
             return 0;
         }
@@ -105,6 +105,31 @@ class Program
             Console.Error.WriteLine(ex.StackTrace);
             return 1;
         }
+    }
+
+    static void ShowHelp()
+    {
+        Console.WriteLine("GodotBuilder - Build Godot as a library with C# bindings");
+        Console.WriteLine();
+        Console.WriteLine("Usage:");
+        Console.WriteLine("  dotnet run [options]");
+        Console.WriteLine("  GodotBuilder [options]");
+        Console.WriteLine();
+        Console.WriteLine("Options:");
+        Console.WriteLine("  (none)        Build for current platform only");
+        Console.WriteLine("  --all, -a     Build for all platforms (Windows, Linux, macOS)");
+        Console.WriteLine("  --help, -h    Show this help message");
+        Console.WriteLine();
+        Console.WriteLine("Examples:");
+        Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj");
+        Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj -- --all");
+        Console.WriteLine();
+        Console.WriteLine("Cross-compilation:");
+        Console.WriteLine("  Building for all platforms from Windows requires appropriate");
+        Console.WriteLine("  cross-compilation toolchains. The builder will attempt to build");
+        Console.WriteLine("  for each platform and report any failures.");
+        Console.WriteLine();
+        Console.WriteLine("Build time: 30-60 minutes per platform");
     }
 
     static void DetectPlatform()
@@ -130,6 +155,87 @@ class Program
         else
         {
             throw new PlatformNotSupportedException($"Unsupported platform: {RuntimeInformation.OSDescription}");
+        }
+    }
+
+    static void BuildAllPlatforms()
+    {
+        Console.WriteLine("Building for all platforms...");
+        Console.WriteLine("This will take significant time (30-60 minutes per platform)");
+        Console.WriteLine();
+
+        var platforms = new[]
+        {
+            ("windows", "dll", "windows"),
+            ("linuxbsd", "so", "linux"),
+            ("macos", "dylib", "macos")
+        };
+
+        int successCount = 0;
+        int failCount = 0;
+
+        foreach (var (platform, libExt, platformDir) in platforms)
+        {
+            Console.WriteLine($"\n{'=', 60}");
+            Console.WriteLine($"Building for {platform}...");
+            Console.WriteLine($"{'=', 60}\n");
+
+            try
+            {
+                BuildForPlatform(platform, libExt, platformDir);
+                successCount++;
+                Console.WriteLine($"✓ {platform} build successful");
+            }
+            catch (Exception ex)
+            {
+                failCount++;
+                Console.WriteLine($"✗ {platform} build failed: {ex.Message}");
+                Console.WriteLine("Continuing with next platform...");
+            }
+        }
+
+        Console.WriteLine($"\n{'=', 60}");
+        Console.WriteLine("Build Summary");
+        Console.WriteLine($"{'=', 60}");
+        Console.WriteLine($"Successful: {successCount}/{platforms.Length}");
+        Console.WriteLine($"Failed: {failCount}/{platforms.Length}");
+    }
+
+    static void BuildForPlatform(string platform, string libExt, string platformDir)
+    {
+        // Build Godot library
+        Console.WriteLine($"Building Godot library for {platform}...");
+        RunCommand("scons", $"platform={platform} target=template_release library_type=shared_library", GodotDir);
+        Console.WriteLine();
+
+        // Copy library files
+        Directory.CreateDirectory(Path.Combine(BuildDir, platformDir));
+        CopyLibraryFiles(platform, libExt, platformDir);
+        Console.WriteLine();
+
+        // Only build GodotSharp assemblies once (they're platform-independent)
+        // Build them on the first platform or current platform
+        if (platform == Platform)
+        {
+            Console.WriteLine("Building GodotSharp bindings...");
+            Console.WriteLine("Building Godot editor with Mono support...");
+            RunCommand("scons", $"platform={platform} target=editor module_mono_enabled=yes", GodotDir);
+            Console.WriteLine();
+
+            // Generate C# glue
+            Console.WriteLine("Generating C# glue code...");
+            GenerateCSharpGlue(platform);
+            Console.WriteLine();
+
+            // Build C# assemblies
+            Console.WriteLine("Building C# assemblies...");
+            BuildCSharpAssemblies();
+            Console.WriteLine();
+
+            // Copy GodotSharp assemblies
+            Console.WriteLine("Copying GodotSharp assemblies to output directory...");
+            CopyGodotSharpAssemblies();
+            Console.WriteLine();
         }
     }
 
@@ -178,13 +284,13 @@ class Program
         }
     }
 
-    static void CopyLibraryFiles()
+    static void CopyLibraryFiles(string platform, string libExt, string platformDir)
     {
         var binDir = Path.Combine(GodotDir, "bin");
         string? libFile = null;
 
         // Try godot.* pattern first
-        var pattern1 = $"godot.{Platform}.*.{LibExt}";
+        var pattern1 = $"godot.{platform}.*.{libExt}";
         var files = Directory.GetFiles(binDir, pattern1, SearchOption.TopDirectoryOnly);
         if (files.Length > 0)
         {
@@ -193,7 +299,7 @@ class Program
         else
         {
             // Try libgodot.* pattern as fallback
-            var pattern2 = $"libgodot.{Platform}.*.{LibExt}";
+            var pattern2 = $"libgodot.{platform}.*.{libExt}";
             files = Directory.GetFiles(binDir, pattern2, SearchOption.TopDirectoryOnly);
             if (files.Length > 0)
             {
@@ -203,26 +309,26 @@ class Program
 
         if (libFile != null)
         {
-            var destFile = Path.Combine(BuildDir, PlatformDir, Path.GetFileName(libFile));
+            var destFile = Path.Combine(BuildDir, platformDir, Path.GetFileName(libFile));
             File.Copy(libFile, destFile, overwrite: true);
-            Console.WriteLine($"Copied {Path.GetFileName(libFile)} to {Path.Combine(BuildDir, PlatformDir)}");
+            Console.WriteLine($"Copied {Path.GetFileName(libFile)} to {Path.Combine(BuildDir, platformDir)}");
         }
         else
         {
-            Console.WriteLine($"Warning: Could not find built library (tried godot.{Platform}.*.{LibExt} and libgodot.{Platform}.*.{LibExt})");
+            Console.WriteLine($"Warning: Could not find built library (tried godot.{platform}.*.{libExt} and libgodot.{platform}.*.{libExt})");
         }
     }
 
-    static void GenerateCSharpGlue()
+    static void GenerateCSharpGlue(string platform)
     {
         var binDir = Path.Combine(GodotDir, "bin");
         // Pattern needs to match files like godot.windows.editor.x86_64.mono.exe
-        var pattern = $"godot.{Platform}.editor.*.mono*";
+        var pattern = $"godot.{platform}.editor.*.mono*";
         var files = Directory.GetFiles(binDir, pattern, SearchOption.TopDirectoryOnly);
 
         if (files.Length == 0)
         {
-            Console.WriteLine($"Warning: Could not find editor binary (godot.{Platform}.editor.*.mono*)");
+            Console.WriteLine($"Warning: Could not find editor binary (godot.{platform}.editor.*.mono*)");
             Console.WriteLine($"Searched in: {binDir}");
             Console.WriteLine("Available files:");
             foreach (var file in Directory.GetFiles(binDir))
