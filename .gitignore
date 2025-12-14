@@ -1,0 +1,35 @@
+# Build artifacts
+bin/
+obj/
+out/
+
+# Godot build artifacts
+godot/
+*.o
+*.so
+*.dll
+*.dylib
+*.a
+*.lib
+
+# .NET artifacts
+*.user
+*.suo
+*.userprefs
+.vs/
+.vscode/
+
+# IDE files
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+tmp/
+temp/
+*.tmp
