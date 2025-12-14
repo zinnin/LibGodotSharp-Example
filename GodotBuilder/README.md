@@ -59,7 +59,7 @@ dotnet run --project GodotBuilder/GodotBuilder.csproj
 4. **Editor Build**: Builds the Godot editor with Mono/C# support
 5. **Glue Generation**: Runs the editor to generate C# glue code
 6. **Assembly Build**: Builds the GodotSharp assemblies using Python script
-7. **File Copy**: Copies all output files to the `lib/` directory (committed to repo)
+7. **File Copy**: Copies native libraries to `lib/` and GodotSharp assemblies to `src/GodotAssemblies/`
 
 ## Output Structure
 
@@ -69,12 +69,13 @@ lib/
 │   └── godot.linuxbsd.template_release.x86_64.so
 ├── macos/          # macOS library files (.dylib)
 │   └── godot.macos.template_release.universal.dylib
-├── windows/        # Windows library files (.dll)
-│   └── godot.windows.template_release.x86_64.dll
-└── GodotSharp/     # C# assemblies (committed for use in implementation)
-    ├── Api/
-    ├── Tools/
-    └── NuPkgs/
+└── windows/        # Windows library files (.dll)
+    └── godot.windows.template_release.x86_64.dll
+
+src/GodotAssemblies/ # GodotSharp C# assemblies for LibGodotSharpExample
+├── Api/             # Core API assemblies (GodotSharp.dll)
+├── Tools/           # Build tools
+└── NuPkgs/          # NuGet packages
 ```
 
 ## Debugging

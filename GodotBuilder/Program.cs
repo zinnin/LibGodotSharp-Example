@@ -11,6 +11,7 @@ class Program
     private static string ScriptDir = AppContext.BaseDirectory;
     private static string GodotDir = string.Empty;
     private static string BuildDir = string.Empty;
+    private static string GodotAssembliesDir = string.Empty;
     private static string Platform = string.Empty;
     private static string LibExt = string.Empty;
     private static string PlatformDir = string.Empty;
@@ -29,11 +30,13 @@ class Program
 
             GodotDir = Path.Combine(ScriptDir, "godot");
             BuildDir = Path.Combine(ScriptDir, "lib");
+            GodotAssembliesDir = Path.Combine(ScriptDir, "src", "GodotAssemblies");
 
             Console.WriteLine("Building Godot as a library...");
             Console.WriteLine($"Script directory: {ScriptDir}");
             Console.WriteLine($"Godot directory: {GodotDir}");
-            Console.WriteLine($"Output directory: {BuildDir}");
+            Console.WriteLine($"Native libs output: {BuildDir}");
+            Console.WriteLine($"GodotSharp output: {GodotAssembliesDir}");
             Console.WriteLine();
 
             // Detect platform
@@ -91,7 +94,7 @@ class Program
 
             Console.WriteLine("Build complete!");
             Console.WriteLine($"Library files are in: {Path.Combine(BuildDir, PlatformDir)}");
-            Console.WriteLine($"GodotSharp assemblies are in: {Path.Combine(BuildDir, "GodotSharp")}");
+            Console.WriteLine($"GodotSharp assemblies are in: {GodotAssembliesDir}");
 
             return 0;
         }
@@ -302,19 +305,23 @@ class Program
     static void CopyGodotSharpAssemblies()
     {
         var sourceDir = Path.Combine(GodotDir, "bin", "GodotSharp");
-        var destDir = Path.Combine(BuildDir, "GodotSharp");
 
         if (!Directory.Exists(sourceDir))
         {
             Console.WriteLine($"Warning: GodotSharp directory not found at {sourceDir}");
+            Console.WriteLine("This might be because:");
+            Console.WriteLine("  - The editor build with Mono support failed");
+            Console.WriteLine("  - The C# glue generation failed");
+            Console.WriteLine("  - The assembly build script failed");
             return;
         }
 
         try
         {
-            Directory.CreateDirectory(destDir);
-            CopyDirectory(sourceDir, destDir);
-            Console.WriteLine($"Copied GodotSharp assemblies to {destDir}");
+            // Copy to src/GodotAssemblies for the example project to use
+            Directory.CreateDirectory(GodotAssembliesDir);
+            CopyDirectory(sourceDir, GodotAssembliesDir);
+            Console.WriteLine($"Copied GodotSharp assemblies to {GodotAssembliesDir}");
         }
         catch (Exception ex)
         {

@@ -21,6 +21,10 @@ godot/
 !lib/**/*.dylib
 !lib/**/*.lib
 
+# Allow GodotAssemblies in src/ for the example project
+!src/GodotAssemblies/
+!src/GodotAssemblies/**
+
 # .NET artifacts
 *.user
 *.suo
