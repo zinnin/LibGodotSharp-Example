@@ -52,14 +52,16 @@ scons platform=$PLATFORM target=template_release library_type=shared_library
 
 mkdir -p "$BUILD_DIR/$PLATFORM_DIR"
 # Copy the library files - Godot outputs as godot.* not libgodot.*
-if ls bin/godot.$PLATFORM.*.${LIB_EXT} 1> /dev/null 2>&1; then
-    cp bin/godot.$PLATFORM.*.${LIB_EXT} "$BUILD_DIR/$PLATFORM_DIR/"
-    echo "Copied godot.$PLATFORM.*.${LIB_EXT} to $BUILD_DIR/$PLATFORM_DIR/"
-elif ls bin/libgodot.$PLATFORM.*.${LIB_EXT} 1> /dev/null 2>&1; then
-    cp bin/libgodot.$PLATFORM.*.${LIB_EXT} "$BUILD_DIR/$PLATFORM_DIR/"
-    echo "Copied libgodot.$PLATFORM.*.${LIB_EXT} to $BUILD_DIR/$PLATFORM_DIR/"
+LIB_FILE=$(find bin -maxdepth 1 -name "godot.$PLATFORM.*.$LIB_EXT" -type f 2>/dev/null | head -1)
+if [ -z "$LIB_FILE" ]; then
+    LIB_FILE=$(find bin -maxdepth 1 -name "libgodot.$PLATFORM.*.$LIB_EXT" -type f 2>/dev/null | head -1)
+fi
+
+if [ -n "$LIB_FILE" ]; then
+    cp "$LIB_FILE" "$BUILD_DIR/$PLATFORM_DIR/"
+    echo "Copied $(basename "$LIB_FILE") to $BUILD_DIR/$PLATFORM_DIR/"
 else
-    echo "Warning: Could not find built library (tried godot.$PLATFORM.*.${LIB_EXT} and libgodot.$PLATFORM.*.${LIB_EXT})"
+    echo "Warning: Could not find built library (tried godot.$PLATFORM.*.$LIB_EXT and libgodot.$PLATFORM.*.$LIB_EXT)"
 fi
 
 echo "Godot library build complete!"
@@ -76,18 +78,22 @@ scons platform=$PLATFORM target=editor module_mono_enabled=yes
 
 # Generate C# glue code
 echo "Generating C# glue code..."
-EDITOR_BIN=$(find bin -name "godot.$PLATFORM.editor.*.mono" -type f 2>/dev/null | head -1)
+EDITOR_BIN=$(find bin -maxdepth 1 -name "godot.$PLATFORM.editor.*.mono" -type f 2>/dev/null | head -1)
 if [ -z "$EDITOR_BIN" ]; then
     echo "Warning: Could not find editor binary (godot.$PLATFORM.editor.*.mono)"
 else
     echo "Found editor binary: $EDITOR_BIN"
-    "$EDITOR_BIN" --headless --generate-mono-glue modules/mono/glue || echo "Warning: Glue generation failed"
+    "$EDITOR_BIN" --headless --generate-mono-glue modules/mono/glue \
+        || echo "Warning: Glue generation failed"
 fi
 
 # Build C# assemblies
 echo "Building C# assemblies..."
 if [ -f "modules/mono/build_scripts/build_assemblies.py" ]; then
-    python3 modules/mono/build_scripts/build_assemblies.py --godot-output-dir="$GODOT_DIR/bin" --push-nupkgs-local "$GODOT_DIR/bin/GodotSharp/NuPkgs" || echo "Warning: Assembly build failed"
+    python3 modules/mono/build_scripts/build_assemblies.py \
+        --godot-output-dir="$GODOT_DIR/bin" \
+        --push-nupkgs-local "$GODOT_DIR/bin/GodotSharp/NuPkgs" \
+        || echo "Warning: Assembly build failed"
 else
     echo "Warning: build_assemblies.py not found at modules/mono/build_scripts/build_assemblies.py"
 fi
