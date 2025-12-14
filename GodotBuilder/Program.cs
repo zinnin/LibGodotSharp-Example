@@ -228,8 +228,11 @@ class Program
             return;
         }
 
-        // Prefer .exe files on Windows, otherwise take the first match
-        var editorBin = files.FirstOrDefault(f => f.EndsWith(".exe")) ?? files[0];
+        // Prefer executables: .mono.exe over .mono.console.exe over other files
+        var editorBin = files.FirstOrDefault(f => f.EndsWith(".mono.exe") && !f.Contains(".console."))
+                     ?? files.FirstOrDefault(f => f.EndsWith(".exe"))
+                     ?? files.FirstOrDefault(f => f.EndsWith(".mono"))
+                     ?? files[0];
         Console.WriteLine($"Found editor binary: {editorBin}");
 
         var glueDir = Path.Combine(GodotDir, "modules", "mono", "glue");

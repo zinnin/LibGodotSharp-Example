@@ -79,9 +79,16 @@ scons platform=$PLATFORM target=editor module_mono_enabled=yes
 # Generate C# glue code
 echo "Generating C# glue code..."
 # Pattern needs to match files like godot.windows.editor.x86_64.mono.exe
-# First try to find .exe or .mono files, then fall back to any match
+# Find all matching files
 ALL_EDITOR_FILES=$(find bin -maxdepth 1 -name "godot.$PLATFORM.editor.*.mono*" -type f 2>/dev/null)
-EDITOR_BIN=$(echo "$ALL_EDITOR_FILES" | grep -E "\.(exe|mono)$" | head -1)
+# Prefer .mono.exe (but not .console.exe), then any .exe, then .mono, then any match
+EDITOR_BIN=$(echo "$ALL_EDITOR_FILES" | grep "\.mono\.exe$" | grep -v "\.console\." | head -1)
+if [ -z "$EDITOR_BIN" ]; then
+    EDITOR_BIN=$(echo "$ALL_EDITOR_FILES" | grep "\.exe$" | head -1)
+fi
+if [ -z "$EDITOR_BIN" ]; then
+    EDITOR_BIN=$(echo "$ALL_EDITOR_FILES" | grep "\.mono$" | head -1)
+fi
 if [ -z "$EDITOR_BIN" ]; then
     EDITOR_BIN=$(echo "$ALL_EDITOR_FILES" | head -1)
 fi
