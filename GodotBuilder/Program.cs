@@ -21,7 +21,7 @@ class Program
         {
             // Determine script directory (use current directory if running from source)
             ScriptDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
-            if (!File.Exists(Path.Combine(ScriptDir, "build-godot.sh")))
+            if (!File.Exists(Path.Combine(ScriptDir, "LibGodotSharp.sln")))
             {
                 // Running from published build, use working directory
                 ScriptDir = Directory.GetCurrentDirectory();
@@ -33,7 +33,7 @@ class Program
             Console.WriteLine("Building Godot as a library...");
             Console.WriteLine($"Script directory: {ScriptDir}");
             Console.WriteLine($"Godot directory: {GodotDir}");
-            Console.WriteLine($"Build directory: {BuildDir}");
+            Console.WriteLine($"Output directory: {BuildDir}");
             Console.WriteLine();
 
             // Detect platform
@@ -85,7 +85,7 @@ class Program
             Console.WriteLine();
 
             // Copy GodotSharp assemblies
-            Console.WriteLine("Copying GodotSharp assemblies to build directory...");
+            Console.WriteLine("Copying GodotSharp assemblies to output directory...");
             CopyGodotSharpAssemblies();
             Console.WriteLine();
 
