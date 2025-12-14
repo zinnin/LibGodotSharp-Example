@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.IO;
+using System.Linq;
 using System.Runtime.InteropServices;
 
 namespace GodotBuilder;
@@ -211,16 +212,24 @@ class Program
     static void GenerateCSharpGlue()
     {
         var binDir = Path.Combine(GodotDir, "bin");
-        var pattern = $"godot.{Platform}.editor.*.mono";
+        // Pattern needs to match files like godot.windows.editor.x86_64.mono.exe
+        var pattern = $"godot.{Platform}.editor.*.mono*";
         var files = Directory.GetFiles(binDir, pattern, SearchOption.TopDirectoryOnly);
 
         if (files.Length == 0)
         {
-            Console.WriteLine($"Warning: Could not find editor binary (godot.{Platform}.editor.*.mono)");
+            Console.WriteLine($"Warning: Could not find editor binary (godot.{Platform}.editor.*.mono*)");
+            Console.WriteLine($"Searched in: {binDir}");
+            Console.WriteLine("Available files:");
+            foreach (var file in Directory.GetFiles(binDir))
+            {
+                Console.WriteLine($"  {Path.GetFileName(file)}");
+            }
             return;
         }
 
-        var editorBin = files[0];
+        // Prefer .exe files on Windows, otherwise take the first match
+        var editorBin = files.FirstOrDefault(f => f.EndsWith(".exe")) ?? files[0];
         Console.WriteLine($"Found editor binary: {editorBin}");
 
         var glueDir = Path.Combine(GodotDir, "modules", "mono", "glue");

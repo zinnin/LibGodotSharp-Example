@@ -78,9 +78,15 @@ scons platform=$PLATFORM target=editor module_mono_enabled=yes
 
 # Generate C# glue code
 echo "Generating C# glue code..."
-EDITOR_BIN=$(find bin -maxdepth 1 -name "godot.$PLATFORM.editor.*.mono" -type f 2>/dev/null | head -1)
+# Pattern needs to match files like godot.windows.editor.x86_64.mono.exe
+EDITOR_BIN=$(find bin -maxdepth 1 -name "godot.$PLATFORM.editor.*.mono*" -type f 2>/dev/null | grep -E "\.(exe|mono)$" | head -1)
 if [ -z "$EDITOR_BIN" ]; then
-    echo "Warning: Could not find editor binary (godot.$PLATFORM.editor.*.mono)"
+    EDITOR_BIN=$(find bin -maxdepth 1 -name "godot.$PLATFORM.editor.*.mono*" -type f 2>/dev/null | head -1)
+fi
+if [ -z "$EDITOR_BIN" ]; then
+    echo "Warning: Could not find editor binary (godot.$PLATFORM.editor.*.mono*)"
+    echo "Available files in bin directory:"
+    ls -la bin/ | grep "godot.$PLATFORM.editor" || echo "  No matching files found"
 else
     echo "Found editor binary: $EDITOR_BIN"
     "$EDITOR_BIN" --headless --generate-mono-glue modules/mono/glue \
