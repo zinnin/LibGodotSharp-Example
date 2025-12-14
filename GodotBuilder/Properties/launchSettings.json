@@ -1,11 +1,28 @@
 {
   "profiles": {
     "GodotBuilder": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": ""
     },
-    "GodotBuilder-All": {
+    "Build All Platforms": {
       "commandName": "Project",
       "commandLineArgs": "--all"
+    },
+    "Build Linux Only": {
+      "commandName": "Project",
+      "commandLineArgs": "linuxbsd"
+    },
+    "Build Windows Only": {
+      "commandName": "Project",
+      "commandLineArgs": "windows"
+    },
+    "Build macOS Only": {
+      "commandName": "Project",
+      "commandLineArgs": "macos"
+    },
+    "Show Help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
     }
   }
 }

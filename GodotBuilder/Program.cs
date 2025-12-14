@@ -36,6 +36,20 @@ class Program
             // Parse command line arguments
             bool buildAll = args.Length > 0 && (args[0] == "--all" || args[0] == "-a");
             bool showHelp = args.Length > 0 && (args[0] == "--help" || args[0] == "-h");
+            string? specificPlatform = null;
+            
+            if (args.Length > 0 && !args[0].StartsWith("-"))
+            {
+                // Check if a specific platform was requested
+                string requestedPlatform = args[0].ToLower();
+                if (requestedPlatform == "windows" || requestedPlatform == "linuxbsd" || 
+                    requestedPlatform == "linux" || requestedPlatform == "macos")
+                {
+                    // Normalize platform names
+                    if (requestedPlatform == "linux") requestedPlatform = "linuxbsd";
+                    specificPlatform = requestedPlatform;
+                }
+            }
 
             if (showHelp)
             {
@@ -58,6 +72,10 @@ class Program
             if (buildAll)
             {
                 Console.WriteLine("Build mode: ALL PLATFORMS (Windows, Linux, macOS)");
+            }
+            else if (specificPlatform != null)
+            {
+                Console.WriteLine($"Build mode: SPECIFIC PLATFORM ({specificPlatform})");
             }
             else
             {
@@ -83,6 +101,11 @@ class Program
             {
                 // Build for all platforms
                 BuildAllPlatforms();
+            }
+            else if (specificPlatform != null)
+            {
+                // Build for specific platform
+                BuildSpecificPlatform(specificPlatform);
             }
             else
             {
@@ -116,13 +139,25 @@ class Program
         Console.WriteLine("  GodotBuilder [options]");
         Console.WriteLine();
         Console.WriteLine("Options:");
-        Console.WriteLine("  (none)        Build for current platform only");
-        Console.WriteLine("  --all, -a     Build for all platforms (Windows, Linux, macOS)");
-        Console.WriteLine("  --help, -h    Show this help message");
+        Console.WriteLine("  (none)             Build for current platform only");
+        Console.WriteLine("  windows            Build for Windows only");
+        Console.WriteLine("  linuxbsd|linux     Build for Linux only");
+        Console.WriteLine("  macos              Build for macOS only");
+        Console.WriteLine("  --all, -a          Build for all platforms (Windows, Linux, macOS)");
+        Console.WriteLine("  --help, -h         Show this help message");
         Console.WriteLine();
         Console.WriteLine("Examples:");
         Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj");
+        Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj -- linuxbsd");
+        Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj -- windows");
         Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj -- --all");
+        Console.WriteLine();
+        Console.WriteLine("Visual Studio:");
+        Console.WriteLine("  Use the launch profiles in Properties/launchSettings.json:");
+        Console.WriteLine("  - 'Build Linux Only' to build for Linux");
+        Console.WriteLine("  - 'Build Windows Only' to build for Windows");
+        Console.WriteLine("  - 'Build macOS Only' to build for macOS");
+        Console.WriteLine("  - 'Build All Platforms' to build for all platforms");
         Console.WriteLine();
         Console.WriteLine("Cross-Platform Building:");
         Console.WriteLine("  The --all flag attempts to build for all platforms. However,");
@@ -250,6 +285,82 @@ class Program
             Console.WriteLine("  - Cross-compilation toolchains installed");
             Console.WriteLine("\nRecommendation: Run the builder on each target platform natively");
             Console.WriteLine("                for the most reliable results.");
+        }
+    }
+
+    static void BuildSpecificPlatform(string platform)
+    {
+        Console.WriteLine($"Building for {platform}...");
+        Console.WriteLine("This will take significant time (30-60 minutes)");
+        Console.WriteLine();
+
+        // Map platform to library extension and directory
+        string libExt, platformDir;
+        switch (platform)
+        {
+            case "windows":
+                libExt = "dll";
+                platformDir = "windows";
+                break;
+            case "linuxbsd":
+                libExt = "so";
+                platformDir = "linux";
+                break;
+            case "macos":
+                libExt = "dylib";
+                platformDir = "macos";
+                break;
+            default:
+                throw new ArgumentException($"Unknown platform: {platform}");
+        }
+
+        Console.WriteLine($"Target platform: {platform}");
+        Console.WriteLine($"Library extension: .{libExt}");
+        Console.WriteLine($"Output directory: lib/{platformDir}");
+        Console.WriteLine();
+
+        // Check if we can build for this platform
+        var canBuild = CheckPlatformRequirements(platform);
+        if (!canBuild.CanBuild)
+        {
+            Console.WriteLine($"✗ Cannot build for {platform}: {canBuild.Reason}");
+            Console.WriteLine($"\nRequired tools for {platform}:");
+            foreach (var tool in canBuild.RequiredTools)
+            {
+                Console.WriteLine($"  - {tool}");
+            }
+            Console.WriteLine();
+            
+            if (platform == "linuxbsd" && Platform == "windows")
+            {
+                Console.WriteLine("IMPORTANT: To build Linux libraries on Windows:");
+                Console.WriteLine("  1. Ensure WSL2 is installed and running");
+                Console.WriteLine("  2. Open a WSL2 terminal (run 'wsl' in cmd/PowerShell)");
+                Console.WriteLine("  3. Navigate to your project in WSL2:");
+                Console.WriteLine("     cd /mnt/c/path/to/LibGodotSharp-Example");
+                Console.WriteLine("  4. Run the builder from within WSL2:");
+                Console.WriteLine("     dotnet run --project GodotBuilder/GodotBuilder.csproj linuxbsd");
+                Console.WriteLine();
+            }
+            
+            throw new InvalidOperationException($"Cannot build for {platform} on current platform");
+        }
+
+        try
+        {
+            BuildForPlatform(platform, libExt, platformDir);
+            Console.WriteLine($"\n✓ {platform} build completed successfully!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"\n✗ {platform} build failed: {ex.Message}");
+            Console.WriteLine("\nPossible causes:");
+            Console.WriteLine("  - Missing compiler or build tools");
+            Console.WriteLine("  - Incompatible SCons version");
+            Console.WriteLine("  - Missing platform-specific dependencies");
+            Console.WriteLine($"\nFor {platform} build requirements, see:");
+            Console.WriteLine("  https://docs.godotengine.org/en/stable/contributing/development/compiling/");
+            throw;
         }
     }
 

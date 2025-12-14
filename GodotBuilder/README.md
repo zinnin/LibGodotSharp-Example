@@ -85,19 +85,57 @@ cd GodotBuilder
 dotnet run
 ```
 
+### Build for specific platform:
+
+```bash
+# Build for Windows
+dotnet run --project GodotBuilder/GodotBuilder.csproj -- windows
+
+# Build for Linux
+dotnet run --project GodotBuilder/GodotBuilder.csproj -- linuxbsd
+# or
+dotnet run --project GodotBuilder/GodotBuilder.csproj -- linux
+
+# Build for macOS
+dotnet run --project GodotBuilder/GodotBuilder.csproj -- macos
+```
+
 ### Build for all platforms (Windows, Linux, macOS):
 
 ```bash
 dotnet run --project GodotBuilder/GodotBuilder.csproj -- --all
 ```
 
-**Note:** Cross-compilation requires appropriate toolchains. On Windows, you can build Linux libraries if you have the necessary cross-compilation tools installed.
+**Note:** Cross-compilation requires appropriate toolchains. See CROSS_COMPILATION.md for details.
 
 ### Show help:
 
 ```bash
 dotnet run --project GodotBuilder/GodotBuilder.csproj -- --help
 ```
+
+### Visual Studio / IDE Usage:
+
+The project includes launch profiles in `Properties/launchSettings.json` for easy Visual Studio integration:
+
+- **GodotBuilder** - Build for current platform
+- **Build All Platforms** - Build for all platforms (--all)
+- **Build Linux Only** - Build for Linux specifically
+- **Build Windows Only** - Build for Windows specifically
+- **Build macOS Only** - Build for macOS specifically
+- **Show Help** - Display help information
+
+**To use in Visual Studio:**
+1. Open the solution in Visual Studio
+2. Set GodotBuilder as the startup project
+3. Select the desired launch profile from the dropdown (next to the Start button)
+4. Click Start (F5) or Start Without Debugging (Ctrl+F5)
+
+**To build Linux on Windows:**
+1. Install and start WSL2 (`wsl --install`)
+2. Open a WSL2 terminal (`wsl`)
+3. Navigate to your project: `cd /mnt/c/path/to/LibGodotSharp-Example`
+4. Run: `dotnet run --project GodotBuilder/GodotBuilder.csproj linuxbsd`
 
 ### Running from build:
 
