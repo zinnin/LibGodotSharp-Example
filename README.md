@@ -15,23 +15,9 @@ This C# example shows how to:
 
 ## Quick Start
 
-### Option 1: Using C# Builder (Recommended)
-
 ```bash
 # Build Godot using the C# builder (takes 30-60 minutes)
 dotnet run --project GodotBuilder/GodotBuilder.csproj
-
-# Build and run the C# application
-cd src
-dotnet build
-dotnet run
-```
-
-### Option 2: Using Bash Script
-
-```bash
-# Build Godot as a library (takes 30-60 minutes)
-./build-godot.sh
 
 # Build and run the C# application
 cd src
@@ -62,7 +48,7 @@ See [BUILD.md](BUILD.md) for detailed build instructions.
 │   ├── Program.cs            # Main entry point
 │   ├── GodotApplication.cs   # Application logic
 │   └── GodotNativeInterop.cs # Native library interface
-├── build-godot.sh            # Bash build script (legacy)
+├── lib/                      # Built libraries (committed)
 ├── BUILD.md                  # Detailed build instructions
 └── README.md                 # This file
 ```

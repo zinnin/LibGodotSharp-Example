@@ -28,7 +28,7 @@ class Program
             }
 
             GodotDir = Path.Combine(ScriptDir, "godot");
-            BuildDir = Path.Combine(ScriptDir, "build");
+            BuildDir = Path.Combine(ScriptDir, "lib");
 
             Console.WriteLine("Building Godot as a library...");
             Console.WriteLine($"Script directory: {ScriptDir}");

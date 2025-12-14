@@ -3,14 +3,19 @@ bin/
 obj/
 out/
 
-# Godot build artifacts
+# Godot build artifacts - source and intermediate files
 godot/
 *.o
-*.so
-*.dll
-*.dylib
 *.a
-*.lib
+
+# Native library files (exclude from root, but allow in lib/)
+/*.so
+/*.dll
+/*.dylib
+/*.lib
+
+# Allow lib/ directory for built assemblies that should be committed
+!lib/
 
 # .NET artifacts
 *.user

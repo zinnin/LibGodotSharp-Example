@@ -4,18 +4,18 @@ A C# command-line tool to build Godot as a library with C# bindings support.
 
 ## Purpose
 
-This tool replaces the `build-godot.sh` bash script with a cross-platform C# implementation that:
+This cross-platform C# tool:
 - Clones the Godot repository
 - Builds Godot as a shared library
 - Builds the Godot editor with Mono support
 - Generates C# glue code
 - Builds GodotSharp assemblies
-- Copies all output files to the build directory
+- Copies all output files to the lib directory
 
-## Benefits over Bash Script
+## Benefits
 
 - **Better debugging**: Can use C# debuggers (VS Code, Visual Studio, Rider) with breakpoints
-- **Cross-platform**: Runs natively on Windows, Linux, and macOS without bash environment
+- **Cross-platform**: Runs natively on Windows, Linux, and macOS
 - **Better error handling**: Exceptions with full stack traces
 - **Real-time output**: See build progress as it happens
 - **IDE integration**: Full IntelliSense and refactoring support
@@ -59,19 +59,19 @@ dotnet run --project GodotBuilder/GodotBuilder.csproj
 4. **Editor Build**: Builds the Godot editor with Mono/C# support
 5. **Glue Generation**: Runs the editor to generate C# glue code
 6. **Assembly Build**: Builds the GodotSharp assemblies using Python script
-7. **File Copy**: Copies all output files to the `build/` directory
+7. **File Copy**: Copies all output files to the `lib/` directory (committed to repo)
 
 ## Output Structure
 
 ```
-build/
+lib/
 ├── linux/          # Linux library files (.so)
 │   └── godot.linuxbsd.template_release.x86_64.so
 ├── macos/          # macOS library files (.dylib)
 │   └── godot.macos.template_release.universal.dylib
 ├── windows/        # Windows library files (.dll)
 │   └── godot.windows.template_release.x86_64.dll
-└── GodotSharp/     # C# assemblies
+└── GodotSharp/     # C# assemblies (committed for use in implementation)
     ├── Api/
     ├── Tools/
     └── NuPkgs/

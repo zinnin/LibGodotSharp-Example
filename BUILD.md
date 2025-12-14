@@ -47,9 +47,7 @@ This project demonstrates how to use Godot as a library from C# code. It shows:
 
 ### Step 1: Build Godot as a Library
 
-#### Option 1: Using C# Builder (Recommended)
-
-The C# builder provides better debugging capabilities and cross-platform support:
+Use the C# builder to compile Godot as a shared library:
 
 ```bash
 # Build from solution
@@ -65,24 +63,17 @@ Benefits:
 - Real-time build progress output
 - Native .NET experience
 - Can set breakpoints in your IDE
+- Cross-platform support
 
 See [GodotBuilder/README.md](GodotBuilder/README.md) for detailed documentation.
 
-#### Option 2: Using Bash Script
-
-Run the bash build script to compile Godot as a shared library:
-
-```bash
-./build-godot.sh
-```
-
-Both methods will:
+The builder will:
 1. Clone the Godot repository (if not already present)
 2. Build Godot as a shared library for your platform
 3. Build Godot editor with Mono support
 4. Generate C# glue code
 5. Build GodotSharp assemblies
-6. Copy all files to the `build/` directory
+6. Copy all files to the `lib/` directory
 
 **Note**: Building Godot from source can take 30-60 minutes depending on your system.
 
@@ -143,17 +134,19 @@ dotnet run
 
 ```
 LibGodotSharp-Example/
+├── LibGodotSharp.sln         # Solution file
 ├── README.md                  # Project overview
 ├── BUILD.md                   # This file
-├── build-godot.sh            # Script to build Godot library
 ├── .gitignore                # Git ignore file
+├── GodotBuilder/             # C# builder tool
+│   └── Program.cs            # Builder implementation
 ├── src/                      # C# source code
 │   ├── LibGodotSharpExample.csproj
 │   ├── Program.cs            # Main entry point
 │   ├── GodotApplication.cs   # Main application logic
 │   └── GodotNativeInterop.cs # Native library interface
-├── godot/                    # Godot source (created by build script)
-└── build/                    # Built libraries (created by build script)
+├── godot/                    # Godot source (created by builder)
+└── lib/                      # Built libraries (created by builder, committed)
     ├── linux/
     ├── macos/
     └── windows/
@@ -224,7 +217,7 @@ mainScene.AddChild(cube);
 
 If you get a "DLL not found" error:
 
-1. Ensure the Godot library is built in the `build/` directory
+1. Ensure the Godot library is built in the `lib/` directory
 2. Copy the library to the same directory as the executable
 3. Or add the library path to your system's library path:
    - Linux: `LD_LIBRARY_PATH`
@@ -259,7 +252,7 @@ The current implementation shows the structure without requiring the full GodotS
 
 To make it fully functional:
 
-1. Build the Godot library using `build-godot.sh`
+1. Build the Godot library using the GodotBuilder tool
 2. Uncomment the native interop calls in the code
 3. Ensure the library is in the correct path
 4. Run the application
