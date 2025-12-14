@@ -16,8 +16,8 @@ This C# example shows how to:
 ## Quick Start
 
 ```bash
-# Build Godot as a library (takes 30-60 minutes)
-./build-godot.sh
+# Build Godot using the C# builder (takes 30-60 minutes)
+dotnet run --project GodotBuilder/GodotBuilder.csproj
 
 # Build and run the C# application
 cd src
@@ -34,25 +34,32 @@ See [BUILD.md](BUILD.md) for detailed build instructions.
 - ✅ **3D Scene Setup**: Programmatically create Camera3D and MeshInstance3D
 - ✅ **Cross-Platform**: Supports Linux, macOS, and Windows
 - ✅ **Build Scripts**: Automated scripts to build Godot as a library
+- ✅ **C# Builder Tool**: Cross-platform C# builder with better debugging support
+- ✅ **Solution Structure**: Organized with proper solution and project structure
 
 ## Project Structure
 
 ```
-├── src/                       # C# source code
+├── LibGodotSharp.sln         # Solution file
+├── GodotBuilder/             # C# builder tool
+│   ├── Program.cs            # Builder implementation
+│   └── README.md             # Builder documentation
+├── src/                      # Example application
 │   ├── Program.cs            # Main entry point
 │   ├── GodotApplication.cs   # Application logic
 │   └── GodotNativeInterop.cs # Native library interface
-├── build-godot.sh            # Build Godot as library
+├── lib/                      # Built libraries (committed)
 ├── BUILD.md                  # Detailed build instructions
 └── README.md                 # This file
 ```
 
 ## Requirements
 
-- .NET SDK 6.0+
+- .NET SDK 10.0+ (for building the solution)
 - SCons (for building Godot)
 - C++ compiler (GCC/Clang/MSVC)
 - Python 3.6+
+- Git
 
 ## Implementation Details
 
