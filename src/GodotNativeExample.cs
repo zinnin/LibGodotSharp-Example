@@ -18,37 +18,117 @@ namespace LibGodotSharpExample;
 /// </summary>
 public class GodotNativeExample
 {
-    // Platform-specific library name
-#if WINDOWS
-    private const string LibGodot = "godot.windows.template_release.x86_64.dll";
-#elif OSX
-    private const string LibGodot = "libgodot.macos.template_release.universal.dylib";
-#else
-    private const string LibGodot = "libgodot.linuxbsd.template_release.x86_64.so";
-#endif
-
     private static Node3D? mainScene;
     private static MeshInstance3D? cube;
 
     /// <summary>
-    /// Native function to initialize Godot engine
-    /// Based on libgodot examples pattern
+    /// Gets the expected library name for the current platform
     /// </summary>
-    [DllImport(LibGodot, CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_initialize")]
-    private static extern int GodotInitialize(int argc, IntPtr argv);
+    private static string GetExpectedLibraryName()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return "godot.windows.template_release.x86_64.dll";
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return "libgodot.linuxbsd.template_release.x86_64.so";
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return "libgodot.macos.template_release.universal.dylib";
+        else
+            return "libgodot (unknown platform)";
+    }
+
+    // Platform-specific native function imports
+    // We need separate declarations for each platform because DllImport requires compile-time constants
 
     /// <summary>
-    /// Native function to process one frame
-    /// Returns true to continue, false to quit
+    /// Native function to initialize Godot engine (Windows)
     /// </summary>
-    [DllImport(LibGodot, CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_iterate")]
-    private static extern bool GodotIterate();
+    [DllImport("godot.windows.template_release.x86_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_initialize")]
+    private static extern int GodotInitialize_Windows(int argc, IntPtr argv);
 
     /// <summary>
-    /// Native function to finalize and cleanup
+    /// Native function to process one frame (Windows)
     /// </summary>
-    [DllImport(LibGodot, CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_finalize")]
-    private static extern void GodotFinalize();
+    [DllImport("godot.windows.template_release.x86_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_iterate")]
+    private static extern bool GodotIterate_Windows();
+
+    /// <summary>
+    /// Native function to finalize and cleanup (Windows)
+    /// </summary>
+    [DllImport("godot.windows.template_release.x86_64.dll", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_finalize")]
+    private static extern void GodotFinalize_Windows();
+
+    /// <summary>
+    /// Native function to initialize Godot engine (Linux)
+    /// </summary>
+    [DllImport("libgodot.linuxbsd.template_release.x86_64.so", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_initialize")]
+    private static extern int GodotInitialize_Linux(int argc, IntPtr argv);
+
+    /// <summary>
+    /// Native function to process one frame (Linux)
+    /// </summary>
+    [DllImport("libgodot.linuxbsd.template_release.x86_64.so", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_iterate")]
+    private static extern bool GodotIterate_Linux();
+
+    /// <summary>
+    /// Native function to finalize and cleanup (Linux)
+    /// </summary>
+    [DllImport("libgodot.linuxbsd.template_release.x86_64.so", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_finalize")]
+    private static extern void GodotFinalize_Linux();
+
+    /// <summary>
+    /// Native function to initialize Godot engine (macOS)
+    /// </summary>
+    [DllImport("libgodot.macos.template_release.universal.dylib", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_initialize")]
+    private static extern int GodotInitialize_macOS(int argc, IntPtr argv);
+
+    /// <summary>
+    /// Native function to process one frame (macOS)
+    /// </summary>
+    [DllImport("libgodot.macos.template_release.universal.dylib", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_iterate")]
+    private static extern bool GodotIterate_macOS();
+
+    /// <summary>
+    /// Native function to finalize and cleanup (macOS)
+    /// </summary>
+    [DllImport("libgodot.macos.template_release.universal.dylib", CallingConvention = CallingConvention.Cdecl, EntryPoint = "godot_finalize")]
+    private static extern void GodotFinalize_macOS();
+
+    // Platform-agnostic wrappers that call the correct platform-specific function
+    private static int GodotInitialize(int argc, IntPtr argv)
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return GodotInitialize_Windows(argc, argv);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return GodotInitialize_Linux(argc, argv);
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return GodotInitialize_macOS(argc, argv);
+        else
+            throw new PlatformNotSupportedException($"Platform not supported: {RuntimeInformation.OSDescription}");
+    }
+
+    private static bool GodotIterate()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            return GodotIterate_Windows();
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            return GodotIterate_Linux();
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            return GodotIterate_macOS();
+        else
+            throw new PlatformNotSupportedException($"Platform not supported: {RuntimeInformation.OSDescription}");
+    }
+
+    private static void GodotFinalize()
+    {
+        if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            GodotFinalize_Windows();
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            GodotFinalize_Linux();
+        else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            GodotFinalize_macOS();
+        else
+            throw new PlatformNotSupportedException($"Platform not supported: {RuntimeInformation.OSDescription}");
+    }
 
     /// <summary>
     /// Main entry point - creates a Godot window with a rotating cube
@@ -66,7 +146,9 @@ public class GodotNativeExample
             if (!InitializeNativeEngine())
             {
                 Console.WriteLine("⚠ Native Godot library not available.");
-                Console.WriteLine("  To run this example, you need the native libgodot library:");
+                Console.WriteLine($"  Detected platform: {RuntimeInformation.OSDescription}");
+                Console.WriteLine($"  Looking for: {GetExpectedLibraryName()}");
+                Console.WriteLine("\n  Native libraries by platform:");
                 Console.WriteLine("  - Windows: godot.windows.template_release.x86_64.dll");
                 Console.WriteLine("  - Linux: libgodot.linuxbsd.template_release.x86_64.so");
                 Console.WriteLine("  - macOS: libgodot.macos.template_release.universal.dylib\n");
@@ -101,7 +183,8 @@ public class GodotNativeExample
         catch (DllNotFoundException ex)
         {
             Console.WriteLine($"\n⚠ Native library not found: {ex.Message}");
-            Console.WriteLine($"   Looking for: {LibGodot}\n");
+            Console.WriteLine($"   Platform: {RuntimeInformation.OSDescription}");
+            Console.WriteLine($"   Looking for: {GetExpectedLibraryName()}\n");
             Console.WriteLine("To build the native library, run:");
             Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj\n");
             ShowIntegrationPattern();
