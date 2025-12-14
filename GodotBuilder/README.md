@@ -47,7 +47,10 @@ The `--all` flag will attempt to build for all platforms, but cross-compilation 
 
 **From Windows:**
 - ✅ **Windows**: Native build (no extra tools needed with Visual Studio or MinGW-w64)
-- ⚠️ **Linux**: Requires WSL2 + Linux tools OR Linux cross-compiler (complex, not recommended)
+- ⚠️ **Linux**: Requires WSL2 (the builder detects WSL2 but you must run it INSIDE WSL2, not from Windows)
+  - Install: `wsl --install`
+  - Usage: Open WSL2 terminal (`wsl`), navigate to project, and run builder from there
+  - Note: WSL2 provides a Linux environment, so it's essentially a native Linux build
 - ❌ **macOS**: Not supported (requires OSXCross - extremely complex setup)
 
 **From Linux:**

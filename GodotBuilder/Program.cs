@@ -291,10 +291,28 @@ class Program
             case "linuxbsd":
                 if (hostPlatform == "windows")
                 {
-                    requiredTools.Add("WSL2 (Windows Subsystem for Linux)");
-                    requiredTools.Add("Linux cross-compilation toolchain");
-                    requiredTools.Add("GCC/Clang for Linux target");
-                    return (false, "Cross-compiling Linux from Windows requires WSL2 or Linux cross-compiler", requiredTools);
+                    // Check if WSL2 is available
+                    bool hasWSL = IsWSL2Available();
+                    
+                    if (hasWSL)
+                    {
+                        // WSL2 is available, but building through WSL is complex
+                        requiredTools.Add("✓ WSL2 detected");
+                        requiredTools.Add("To build Linux libraries with WSL2:");
+                        requiredTools.Add("  1. Open WSL2 terminal: wsl");
+                        requiredTools.Add("  2. Navigate to project directory");
+                        requiredTools.Add("  3. Run: dotnet run --project GodotBuilder/GodotBuilder.csproj");
+                        requiredTools.Add("");
+                        requiredTools.Add("Note: The builder must run inside WSL2, not from Windows");
+                        return (false, "WSL2 detected but build must run inside WSL2 environment", requiredTools);
+                    }
+                    else
+                    {
+                        requiredTools.Add("WSL2 (Windows Subsystem for Linux)");
+                        requiredTools.Add("Install with: wsl --install");
+                        requiredTools.Add("Then run the builder inside WSL2");
+                        return (false, "WSL2 not detected. Install WSL2 to build Linux libraries from Windows", requiredTools);
+                    }
                 }
                 else if (hostPlatform == "macos")
                 {
@@ -336,6 +354,54 @@ class Program
                 process.WaitForExit();
                 return process.ExitCode == 0;
             }
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    static bool IsWSL2Available()
+    {
+        try
+        {
+            // Check if wsl command is available
+            var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "wsl",
+                Arguments = "--list --verbose",
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            });
+            
+            if (process == null)
+                return false;
+
+            string output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            
+            if (process.ExitCode != 0)
+                return false;
+
+            // Check if there's at least one WSL2 distribution
+            // Look for "VERSION" column with value "2"
+            var lines = output.Split(new[] { '\r', '\n' }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var line in lines)
+            {
+                // Skip header line
+                if (line.Contains("NAME") || line.Contains("STATE") || line.Contains("VERSION"))
+                    continue;
+                    
+                // Check if line contains version 2
+                if (line.Contains("2") && !line.Contains("docker"))
+                {
+                    return true;
+                }
+            }
+            
             return false;
         }
         catch

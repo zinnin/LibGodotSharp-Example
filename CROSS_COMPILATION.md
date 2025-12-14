@@ -84,10 +84,15 @@ Recommendation: Run the builder on each target platform natively
 - Visual Studio 2019+ with C++ tools, OR
 - MinGW-w64
 
-**Cross-compile to Linux:** ⚠️ Complex
-- Install WSL2: `wsl --install`
-- Inside WSL2: Install Linux build tools
-- Note: This is complex and not recommended
+**Cross-compile to Linux:** ⚠️ Use WSL2 (separate environment)
+- Install WSL2: `wsl --install` (requires restart)
+- The GodotBuilder can detect if WSL2 is installed
+- However, you must RUN the builder INSIDE WSL2, not from Windows
+- Steps:
+  1. Open WSL2 terminal: `wsl`
+  2. Navigate to project: `cd /mnt/c/path/to/project`
+  3. Run builder: `dotnet run --project GodotBuilder/GodotBuilder.csproj`
+- Note: WSL2 is essentially a Linux environment, so this is "native" Linux build
 
 **Cross-compile to macOS:** ❌ Not practical
 - Would require OSXCross (extremely complex setup)
@@ -150,11 +155,28 @@ For reliable multi-platform builds:
 ### On Windows (to build for all platforms):
 ```bash
 # Windows native: Already have (Visual Studio or MinGW)
-# Linux: Install WSL2
+
+# Linux: Requires WSL2
+# 1. Install WSL2:
 wsl --install
+
+# 2. Restart your computer if prompted
+
+# 3. Open WSL2 terminal:
 wsl
+
+# 4. Inside WSL2, install build tools:
 sudo apt update
-sudo apt install build-essential scons mingw-w64
+sudo apt install build-essential scons pkg-config libx11-dev libxcursor-dev \
+  libxinerama-dev libgl1-mesa-dev libglu-dev libasound2-dev libpulse-dev \
+  libudev-dev libxi-dev libxrandr-dev
+
+# 5. Inside WSL2, navigate to project and build:
+cd /mnt/c/path/to/LibGodotSharp-Example
+dotnet run --project GodotBuilder/GodotBuilder.csproj
+
+# IMPORTANT: The builder must run INSIDE WSL2, not from Windows command prompt
+# The --all flag from Windows will detect WSL2 but skip Linux build with instructions
 
 # macOS: Not practical
 ```
