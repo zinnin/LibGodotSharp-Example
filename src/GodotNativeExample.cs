@@ -119,25 +119,33 @@ public class GodotNativeExample
         try
         {
             Console.WriteLine("Attempting to create Godot instance...");
+            Console.WriteLine("\nNOTE: libgodot_create_godot_instance requires:");
+            Console.WriteLine("  1. A GDExtension initialization function");
+            Console.WriteLine("  2. Proper Godot project setup (project.godot, etc.)");
+            Console.WriteLine("\nWithout these, Godot will fail to initialize.\n");
             
             // The correct libgodot API requires:
             // 1. Command line arguments (argc, argv)
             // 2. GDExtension initialization function pointer
             
-            // Prepare argv
+            // Prepare argv - try to pass arguments that might help
+            // Note: Godot will still look for project files
             IntPtr argv = Marshal.StringToHGlobalAnsi("LibGodotSharpExample");
             
             try
             {
                 // NOTE: The third parameter (p_init_func) is a GDExtension initialization function
                 // This is typically provided by a GDExtension plugin
-                // For a standalone C# application, this requires additional setup
+                // Without a proper init function and project setup, this will fail
                 IntPtr gdInstance = LibGodotCreateInstance(1, argv, IntPtr.Zero);
                 
                 if (gdInstance == IntPtr.Zero)
                 {
                     Console.WriteLine("✗ Failed to create Godot instance");
-                    Console.WriteLine("\nThis is expected without a GDExtension initialization function.");
+                    Console.WriteLine("\nThis is expected behavior because:");
+                    Console.WriteLine("  • No GDExtension initialization function provided");
+                    Console.WriteLine("  • No Godot project files (.pck or project.godot)");
+                    Console.WriteLine("  • libgodot requires a complete Godot project context\n");
                     ShowAPIDocumentation();
                     return;
                 }
@@ -178,8 +186,22 @@ public class GodotNativeExample
         }
         catch (Exception ex)
         {
-            Console.Error.WriteLine($"\n✗ Error: {ex.Message}");
-            Console.Error.WriteLine(ex.StackTrace);
+            Console.WriteLine($"\n✗ Error during Godot instance creation:");
+            Console.WriteLine($"   {ex.Message}\n");
+            
+            if (ex.Message.Contains(".pck") || ex.Message.Contains("project data"))
+            {
+                Console.WriteLine("This error indicates Godot is looking for project files.");
+                Console.WriteLine("\nlibgodot requires a complete Godot project context:");
+                Console.WriteLine("  1. A Godot project directory with project.godot");
+                Console.WriteLine("  2. A .pck file (packed project) or project source files");
+                Console.WriteLine("  3. A GDExtension initialization function");
+                Console.WriteLine("\nUsing libgodot as a pure library (without a Godot project) is not");
+                Console.WriteLine("supported in the current Godot architecture. libgodot is designed to");
+                Console.WriteLine("embed a full Godot project into another application.\n");
+            }
+            
+            ShowAPIDocumentation();
         }
     }
 
@@ -201,6 +223,7 @@ public class GodotNativeExample
         Console.WriteLine("   Creates a GodotInstance object. Requires:");
         Console.WriteLine("   - Command line arguments (argc, argv)");
         Console.WriteLine("   - GDExtension initialization function (from your plugin/app)");
+        Console.WriteLine("   - A Godot project (project.godot or .pck file)");
         Console.WriteLine();
         Console.WriteLine("2. libgodot_destroy_godot_instance:");
         Console.WriteLine("   void libgodot_destroy_godot_instance(GDExtensionObjectPtr p_godot_instance);");
@@ -212,24 +235,32 @@ public class GodotNativeExample
         Console.WriteLine("   - bool iteration()  : Processes one frame");
         Console.WriteLine("   - void stop()       : Stops the instance");
         Console.WriteLine();
-        Console.WriteLine("Example usage (from GodotInstance):");
-        Console.WriteLine("   // C# pseudo-code");
-        Console.WriteLine("   IntPtr instancePtr = LibGodotCreateInstance(argc, argv, initFunc);");
-        Console.WriteLine("   GodotInstance instance = (GodotInstance)GD.InstanceFromId(...);");
-        Console.WriteLine("   ");
-        Console.WriteLine("   instance.Start();");
-        Console.WriteLine("   while (instance.Iteration()) {");
-        Console.WriteLine("       // Game loop");
-        Console.WriteLine("   }");
-        Console.WriteLine("   instance.Stop();");
-        Console.WriteLine("   ");
-        Console.WriteLine("   LibGodotDestroyInstance(instancePtr);");
+        Console.WriteLine("IMPORTANT: libgodot Usage Model");
+        Console.WriteLine("--------------------------------");
+        Console.WriteLine("libgodot is designed to embed a complete Godot project into another");
+        Console.WriteLine("application (like a Swift app or C++ application). It is NOT a pure");
+        Console.WriteLine("library that you can call from C# without a Godot project.");
+        Console.WriteLine();
+        Console.WriteLine("To use libgodot, you need:");
+        Console.WriteLine("  1. A complete Godot project (with project.godot or exported .pck)");
+        Console.WriteLine("  2. A GDExtension that provides the initialization function");
+        Console.WriteLine("  3. The host application (C++/Swift/etc.) that calls libgodot");
+        Console.WriteLine();
+        Console.WriteLine("Example workflow:");
+        Console.WriteLine("  1. Create a Godot project with your game/app logic");
+        Console.WriteLine("  2. Create a GDExtension plugin for host app integration");
+        Console.WriteLine("  3. Export your project or use it in-place");
+        Console.WriteLine("  4. From your C#/C++/Swift app, call libgodot_create_godot_instance");
+        Console.WriteLine("  5. The Godot project runs embedded in your application");
         Console.WriteLine();
         Console.WriteLine("For working examples, see:");
         Console.WriteLine("  - https://github.com/migeran/libgodot (C++/Swift examples)");
         Console.WriteLine("  - https://github.com/godotengine/godot/blob/master/core/extension/libgodot.h");
         Console.WriteLine();
-        Console.WriteLine("To build libgodot-enabled Godot:");
-        Console.WriteLine("  scons platform=<platform> target=template_release library_type=shared_library");
+        Console.WriteLine("Alternative Approach:");
+        Console.WriteLine("  If you want to use GodotSharp from C# without libgodot, consider:");
+        Console.WriteLine("  - Creating a standard Godot project");
+        Console.WriteLine("  - Using C# scripts within Godot");
+        Console.WriteLine("  - Running Godot normally (not as an embedded library)");
     }
 }
