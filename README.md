@@ -25,6 +25,12 @@ dotnet run
 # For current platform only (30-60 minutes):
 dotnet run --project GodotBuilder/GodotBuilder.csproj
 
+# For Linux on Windows (via WSL2) - single command:
+# PowerShell:
+.\Build-Linux.ps1
+# or Command Prompt:
+Build-Linux.bat
+
 # For all platforms (Windows, Linux, macOS) - requires cross-compilation tools:
 dotnet run --project GodotBuilder/GodotBuilder.csproj -- --all
 ```

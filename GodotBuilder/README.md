@@ -120,7 +120,8 @@ The project includes launch profiles in `Properties/launchSettings.json` for eas
 
 - **GodotBuilder** - Build for current platform
 - **Build All Platforms** - Build for all platforms (--all)
-- **Build Linux Only** - Build for Linux specifically
+- **Build Linux Only** - Build for Linux specifically (direct, requires running in WSL2 if on Windows)
+- **Build Linux via WSL2 (Windows)** - ⭐ **Single-click Linux build on Windows via WSL2**
 - **Build Windows Only** - Build for Windows specifically
 - **Build macOS Only** - Build for macOS specifically
 - **Show Help** - Display help information
@@ -131,7 +132,33 @@ The project includes launch profiles in `Properties/launchSettings.json` for eas
 3. Select the desired launch profile from the dropdown (next to the Start button)
 4. Click Start (F5) or Start Without Debugging (Ctrl+F5)
 
-**To build Linux on Windows:**
+**Recommended for Windows users building Linux:** Use the "Build Linux via WSL2 (Windows)" profile for automatic WSL2 integration.
+
+**To build Linux on Windows (Easy Method - Single Click):**
+
+Use the provided scripts that automatically handle WSL2:
+
+**PowerShell:**
+```powershell
+.\Build-Linux.ps1
+```
+
+**Command Prompt:**
+```cmd
+Build-Linux.bat
+```
+
+**Visual Studio:**
+- Select "Build Linux via WSL2 (Windows)" launch profile
+- Click Start (F5) or Start Without Debugging (Ctrl+F5)
+
+These scripts automatically:
+- Check for WSL2 installation
+- Convert Windows paths to WSL2 paths
+- Launch the build inside WSL2
+- Handle .NET SDK detection
+
+**Manual Method (Advanced):**
 1. Install and start WSL2 (`wsl --install`)
 2. Open a WSL2 terminal (`wsl`)
 3. Navigate to your project: `cd /mnt/c/path/to/LibGodotSharp-Example`

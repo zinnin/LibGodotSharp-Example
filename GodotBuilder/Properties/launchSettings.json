@@ -12,6 +12,12 @@
       "commandName": "Project",
       "commandLineArgs": "linuxbsd"
     },
+    "Build Linux via WSL2 (Windows)": {
+      "commandName": "Executable",
+      "executablePath": "pwsh",
+      "commandLineArgs": "-ExecutionPolicy Bypass -File \"$(SolutionDir)Build-Linux.ps1\"",
+      "workingDirectory": "$(SolutionDir)"
+    },
     "Build Windows Only": {
       "commandName": "Project",
       "commandLineArgs": "windows"
