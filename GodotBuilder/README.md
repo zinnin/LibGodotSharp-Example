@@ -43,12 +43,31 @@ This cross-platform C# tool:
 
 ### Cross-Compilation (Optional)
 
-To build for multiple platforms from Windows using `--all`:
-- Install MinGW-w64 for Windows builds
-- For Linux cross-compilation: Install WSL2 with Linux toolchain or use cross-compilation tools
-- For macOS cross-compilation: OSXCross toolchain (advanced, not commonly used)
+The `--all` flag will attempt to build for all platforms, but cross-compilation has specific requirements:
 
-**Tip:** For reliable multi-platform builds, use separate native environments or CI/CD pipelines for each platform.
+**From Windows:**
+- ✅ **Windows**: Native build (no extra tools needed with Visual Studio or MinGW-w64)
+- ⚠️ **Linux**: Requires WSL2 + Linux tools OR Linux cross-compiler (complex, not recommended)
+- ❌ **macOS**: Not supported (requires OSXCross - extremely complex setup)
+
+**From Linux:**
+- ✅ **Linux**: Native build (no extra tools needed with GCC/Clang)
+- ✅ **Windows**: Install MinGW-w64: `sudo apt install mingw-w64`
+- ❌ **macOS**: Not commonly supported (requires OSXCross)
+
+**From macOS:**
+- ✅ **macOS**: Native build (no extra tools needed with Xcode)
+- ⚠️ **Windows**: Install MinGW-w64: `brew install mingw-w64` (may have issues)
+- ❌ **Linux**: Not commonly supported
+
+**IMPORTANT:** The builder will automatically detect missing toolchains and skip platforms that cannot be built, with clear messaging about what's needed.
+
+**Recommended Approach:** 
+For production builds, run the GodotBuilder natively on each target operating system. This ensures:
+- Most reliable builds
+- No cross-compilation complexity
+- Native compiler optimizations
+- Easier troubleshooting
 
 ## Usage
 

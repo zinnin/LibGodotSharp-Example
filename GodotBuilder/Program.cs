@@ -124,10 +124,27 @@ class Program
         Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj");
         Console.WriteLine("  dotnet run --project GodotBuilder/GodotBuilder.csproj -- --all");
         Console.WriteLine();
-        Console.WriteLine("Cross-compilation:");
-        Console.WriteLine("  Building for all platforms from Windows requires appropriate");
-        Console.WriteLine("  cross-compilation toolchains. The builder will attempt to build");
-        Console.WriteLine("  for each platform and report any failures.");
+        Console.WriteLine("Cross-Platform Building:");
+        Console.WriteLine("  The --all flag attempts to build for all platforms. However,");
+        Console.WriteLine("  cross-compilation requires specific toolchains:");
+        Console.WriteLine();
+        Console.WriteLine("  From Windows:");
+        Console.WriteLine("    - Windows: Native (Visual Studio or MinGW-w64)");
+        Console.WriteLine("    - Linux: Requires WSL2 or Linux cross-compiler (complex)");
+        Console.WriteLine("    - macOS: Not supported (requires OSXCross - very complex)");
+        Console.WriteLine();
+        Console.WriteLine("  From Linux:");
+        Console.WriteLine("    - Linux: Native (GCC or Clang)");
+        Console.WriteLine("    - Windows: Requires MinGW-w64 (apt install mingw-w64)");
+        Console.WriteLine("    - macOS: Not commonly supported");
+        Console.WriteLine();
+        Console.WriteLine("  From macOS:");
+        Console.WriteLine("    - macOS: Native (Xcode command line tools)");
+        Console.WriteLine("    - Windows: Requires MinGW-w64 (brew install mingw-w64)");
+        Console.WriteLine("    - Linux: Not commonly supported");
+        Console.WriteLine();
+        Console.WriteLine("  RECOMMENDATION: Run the builder natively on each target OS");
+        Console.WriteLine("                  for the most reliable builds.");
         Console.WriteLine();
         Console.WriteLine("Build time: 30-60 minutes per platform");
     }
@@ -163,6 +180,9 @@ class Program
         Console.WriteLine("Building for all platforms...");
         Console.WriteLine("This will take significant time (30-60 minutes per platform)");
         Console.WriteLine();
+        Console.WriteLine("NOTE: Cross-platform builds require appropriate toolchains installed.");
+        Console.WriteLine("      Builds will be skipped for platforms without required tools.");
+        Console.WriteLine();
 
         var platforms = new[]
         {
@@ -173,12 +193,28 @@ class Program
 
         int successCount = 0;
         int failCount = 0;
+        int skippedCount = 0;
 
         foreach (var (platform, libExt, platformDir) in platforms)
         {
-            Console.WriteLine($"\n{'=', 60}");
+            Console.WriteLine($"\n{new string('=', 60)}");
             Console.WriteLine($"Building for {platform}...");
-            Console.WriteLine($"{'=', 60}\n");
+            Console.WriteLine($"{new string('=', 60)}\n");
+
+            // Check if we can build for this platform
+            var canBuild = CheckPlatformRequirements(platform);
+            if (!canBuild.CanBuild)
+            {
+                skippedCount++;
+                Console.WriteLine($"⊘ {platform} build skipped: {canBuild.Reason}");
+                Console.WriteLine($"\nRequired tools for {platform}:");
+                foreach (var tool in canBuild.RequiredTools)
+                {
+                    Console.WriteLine($"  - {tool}");
+                }
+                Console.WriteLine();
+                continue;
+            }
 
             try
             {
@@ -190,15 +226,122 @@ class Program
             {
                 failCount++;
                 Console.WriteLine($"✗ {platform} build failed: {ex.Message}");
-                Console.WriteLine("Continuing with next platform...");
+                Console.WriteLine("\nPossible causes:");
+                Console.WriteLine("  - Missing compiler or build tools");
+                Console.WriteLine("  - Incompatible SCons version");
+                Console.WriteLine("  - Missing platform-specific dependencies");
+                Console.WriteLine($"\nFor {platform} build requirements, see:");
+                Console.WriteLine("  https://docs.godotengine.org/en/stable/contributing/development/compiling/");
+                Console.WriteLine("\nContinuing with next platform...");
             }
         }
 
-        Console.WriteLine($"\n{'=', 60}");
+        Console.WriteLine($"\n{new string('=', 60)}");
         Console.WriteLine("Build Summary");
-        Console.WriteLine($"{'=', 60}");
+        Console.WriteLine($"{new string('=', 60)}");
         Console.WriteLine($"Successful: {successCount}/{platforms.Length}");
         Console.WriteLine($"Failed: {failCount}/{platforms.Length}");
+        Console.WriteLine($"Skipped: {skippedCount}/{platforms.Length}");
+        
+        if (skippedCount > 0 || failCount > 0)
+        {
+            Console.WriteLine("\nTo build for all platforms, you need:");
+            Console.WriteLine("  - Native build on each OS, OR");
+            Console.WriteLine("  - Cross-compilation toolchains installed");
+            Console.WriteLine("\nRecommendation: Run the builder on each target platform natively");
+            Console.WriteLine("                for the most reliable results.");
+        }
+    }
+
+    static (bool CanBuild, string Reason, List<string> RequiredTools) CheckPlatformRequirements(string platform)
+    {
+        var requiredTools = new List<string>();
+        
+        // Determine current host platform
+        string hostPlatform = Platform;
+        
+        // Same platform - always can build
+        if (platform == hostPlatform)
+        {
+            return (true, "", new List<string>());
+        }
+
+        // Cross-compilation requirements
+        switch (platform)
+        {
+            case "windows":
+                if (hostPlatform == "linuxbsd")
+                {
+                    requiredTools.Add("MinGW-w64 (x86_64-w64-mingw32-gcc)");
+                    requiredTools.Add("mingw-w64 package installed");
+                    
+                    // Check if MinGW is available
+                    if (!IsCommandAvailable("x86_64-w64-mingw32-gcc"))
+                    {
+                        return (false, "MinGW-w64 cross-compiler not found", requiredTools);
+                    }
+                }
+                else if (hostPlatform == "macos")
+                {
+                    requiredTools.Add("MinGW-w64 via Homebrew (brew install mingw-w64)");
+                    return (false, "Cross-compiling Windows from macOS requires MinGW-w64", requiredTools);
+                }
+                break;
+
+            case "linuxbsd":
+                if (hostPlatform == "windows")
+                {
+                    requiredTools.Add("WSL2 (Windows Subsystem for Linux)");
+                    requiredTools.Add("Linux cross-compilation toolchain");
+                    requiredTools.Add("GCC/Clang for Linux target");
+                    return (false, "Cross-compiling Linux from Windows requires WSL2 or Linux cross-compiler", requiredTools);
+                }
+                else if (hostPlatform == "macos")
+                {
+                    requiredTools.Add("Linux cross-compilation toolchain");
+                    return (false, "Cross-compiling Linux from macOS is not commonly supported", requiredTools);
+                }
+                break;
+
+            case "macos":
+                if (hostPlatform != "macos")
+                {
+                    requiredTools.Add("OSXCross toolchain");
+                    requiredTools.Add("Xcode SDK");
+                    requiredTools.Add("Note: macOS cross-compilation is complex and rarely used");
+                    return (false, "Cross-compiling macOS from non-macOS systems requires OSXCross (advanced setup)", requiredTools);
+                }
+                break;
+        }
+
+        return (true, "", requiredTools);
+    }
+
+    static bool IsCommandAvailable(string command)
+    {
+        try
+        {
+            var process = Process.Start(new ProcessStartInfo
+            {
+                FileName = "which",
+                Arguments = command,
+                UseShellExecute = false,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                CreateNoWindow = true
+            });
+            
+            if (process != null)
+            {
+                process.WaitForExit();
+                return process.ExitCode == 0;
+            }
+            return false;
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     static void BuildForPlatform(string platform, string libExt, string platformDir)
