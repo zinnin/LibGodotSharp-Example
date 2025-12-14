@@ -1,0 +1,11 @@
+{
+  "profiles": {
+    "GodotBuilder": {
+      "commandName": "Project"
+    },
+    "GodotBuilder-All": {
+      "commandName": "Project",
+      "commandLineArgs": "--all"
+    }
+  }
+}
