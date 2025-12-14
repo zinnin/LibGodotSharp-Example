@@ -24,6 +24,10 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
       <Link>godot.windows.template_release.x86_64.dll</Link>
     </None>
+    <None Include="Main.pck">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>LibGodotSharpExample.pck</Link>
+    </None>
   </ItemGroup>
 
 </Project>

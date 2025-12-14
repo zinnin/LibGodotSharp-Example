@@ -53,8 +53,10 @@ See [BUILD.md](BUILD.md) for detailed build instructions.
 ├── src/                      # Example application
 │   ├── Program.cs            # Main entry point
 │   ├── GodotSharpExample.cs  # GodotSharp implementation
+│   ├── GodotNativeExample.cs # libgodot API integration example
 │   ├── GodotApplication.cs   # Alternative simulation approach
 │   ├── GodotNativeInterop.cs # Native library interface
+│   ├── Main.pck              # Godot project data (copied as LibGodotSharpExample.pck)
 │   └── GodotAssemblies/      # Pre-built GodotSharp assemblies
 │       ├── Api/              # GodotSharp.dll, GodotSharpEditor.dll
 │       └── Tools/            # Build tools
@@ -81,11 +83,21 @@ This example demonstrates using the **GodotSharp Integration** approach with off
   - Demonstrates complete scene setup with Node3D, Camera3D, MeshInstance3D
   - Shows material configuration with StandardMaterial3D
   - Includes ready-to-use SceneSetup class for native integration
+
+- **GodotNativeExample.cs**: libgodot API integration example
+  - Demonstrates correct libgodot API (libgodot_create_godot_instance)
+  - Shows proper P/Invoke declarations for native library
+  - Includes comprehensive documentation on libgodot usage model
+  - Requires Main.pck (Godot project data) for initialization
   
 - **GodotApplication.cs**: Alternative simulation approach showing structure
 - **GodotNativeInterop.cs**: P/Invoke declarations for native library (when needed)
 
 The code uses pre-built GodotSharp assemblies (v4.6.0) from `src/GodotAssemblies/`.
+
+### Godot Project Data (.pck file)
+
+The `Main.pck` file contains Godot project data required by libgodot. During build, it's automatically copied to the output directory as `LibGodotSharpExample.pck` (matching the executable name). This is required because libgodot expects to load project data when creating a Godot instance.
 
 ## References
 
