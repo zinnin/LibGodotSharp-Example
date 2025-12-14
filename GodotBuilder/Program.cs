@@ -21,7 +21,8 @@ class Program
         try
         {
             // Determine script directory (use current directory if running from source)
-            ScriptDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", ".."));
+            // From bin/Debug/net10.0 we need to go up 4 levels to reach repository root
+            ScriptDir = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", ".."));
             if (!File.Exists(Path.Combine(ScriptDir, "LibGodotSharp.sln")))
             {
                 // Running from published build, use working directory
