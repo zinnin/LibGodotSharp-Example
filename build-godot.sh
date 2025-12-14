@@ -90,7 +90,13 @@ fi
 # Build C# assemblies
 echo "Building C# assemblies..."
 if [ -f "modules/mono/build_scripts/build_assemblies.py" ]; then
-    python3 modules/mono/build_scripts/build_assemblies.py \
+    # Try python3 first, then fall back to python
+    PYTHON_CMD="python3"
+    if ! command -v python3 &> /dev/null; then
+        PYTHON_CMD="python"
+    fi
+    
+    $PYTHON_CMD modules/mono/build_scripts/build_assemblies.py \
         --godot-output-dir="$GODOT_DIR/bin" \
         --push-nupkgs-local "$GODOT_DIR/bin/GodotSharp/NuPkgs" \
         || echo "Warning: Assembly build failed"
