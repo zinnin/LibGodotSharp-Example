@@ -37,7 +37,7 @@ This project demonstrates how to use Godot as a library from C# code. It shows:
 
 ### For Building C# Application
 
-- **.NET SDK 6.0+**: The C# application requires .NET
+- **.NET SDK 10.0+**: The C# application requires .NET 10
   ```bash
   # Download from https://dotnet.microsoft.com/download
   dotnet --version
@@ -47,16 +47,42 @@ This project demonstrates how to use Godot as a library from C# code. It shows:
 
 ### Step 1: Build Godot as a Library
 
-Run the build script to compile Godot as a shared library:
+#### Option 1: Using C# Builder (Recommended)
+
+The C# builder provides better debugging capabilities and cross-platform support:
+
+```bash
+# Build from solution
+dotnet run --project GodotBuilder/GodotBuilder.csproj
+
+# Or build and run separately
+dotnet build GodotBuilder/GodotBuilder.csproj -c Release
+./GodotBuilder/bin/Release/net10.0/GodotBuilder
+```
+
+Benefits:
+- Better error messages and debugging
+- Real-time build progress output
+- Native .NET experience
+- Can set breakpoints in your IDE
+
+See [GodotBuilder/README.md](GodotBuilder/README.md) for detailed documentation.
+
+#### Option 2: Using Bash Script
+
+Run the bash build script to compile Godot as a shared library:
 
 ```bash
 ./build-godot.sh
 ```
 
-This script will:
+Both methods will:
 1. Clone the Godot repository (if not already present)
 2. Build Godot as a shared library for your platform
-3. Copy the built library to the `build/` directory
+3. Build Godot editor with Mono support
+4. Generate C# glue code
+5. Build GodotSharp assemblies
+6. Copy all files to the `build/` directory
 
 **Note**: Building Godot from source can take 30-60 minutes depending on your system.
 
