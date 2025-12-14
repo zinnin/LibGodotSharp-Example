@@ -29,41 +29,68 @@ echo "Building Godot library..."
 
 # For Linux
 if [[ "$OSTYPE" == "linux-gnu"* ]]; then
-    scons platform=linuxbsd target=template_release library_type=shared_library
-    
-    mkdir -p "$BUILD_DIR/linux"
-    cp bin/libgodot.linux.*.so "$BUILD_DIR/linux/" || echo "Warning: Could not find built library"
-    
+    PLATFORM="linuxbsd"
+    LIB_EXT="so"
+    PLATFORM_DIR="linux"
 # For macOS
 elif [[ "$OSTYPE" == "darwin"* ]]; then
-    scons platform=macos target=template_release library_type=shared_library
-    
-    mkdir -p "$BUILD_DIR/macos"
-    cp bin/libgodot.macos.*.dylib "$BUILD_DIR/macos/" || echo "Warning: Could not find built library"
-    
+    PLATFORM="macos"
+    LIB_EXT="dylib"
+    PLATFORM_DIR="macos"
 # For Windows (Git Bash/MSYS)
 elif [[ "$OSTYPE" == "msys"* ]] || [[ "$OSTYPE" == "cygwin"* ]]; then
-    scons platform=windows target=template_release library_type=shared_library
-    
-    mkdir -p "$BUILD_DIR/windows"
-    cp bin/libgodot.windows.*.dll "$BUILD_DIR/windows/" || echo "Warning: Could not find built library"
+    PLATFORM="windows"
+    LIB_EXT="dll"
+    PLATFORM_DIR="windows"
 else
     echo "Unsupported platform: $OSTYPE"
     exit 1
 fi
 
+echo "Building Godot library for $PLATFORM..."
+scons platform=$PLATFORM target=template_release library_type=shared_library
+
+mkdir -p "$BUILD_DIR/$PLATFORM_DIR"
+# Copy the library files - Godot outputs as godot.* not libgodot.*
+cp bin/godot.$PLATFORM.*.${LIB_EXT} "$BUILD_DIR/$PLATFORM_DIR/" || cp bin/libgodot.$PLATFORM.*.${LIB_EXT} "$BUILD_DIR/$PLATFORM_DIR/" || echo "Warning: Could not find built library"
+
 echo "Godot library build complete!"
 echo "Library files are in: $BUILD_DIR"
 
 # Build GodotSharp bindings
+echo ""
 echo "Building GodotSharp bindings..."
-cd "$GODOT_DIR/modules/mono"
-
-# Generate C# glue
 cd "$GODOT_DIR"
-# Note: This requires the editor build to generate bindings
-# scons platform=linuxbsd target=editor module_mono_enabled=yes
+
+# Build the editor with Mono support to generate C# glue
+echo "Building Godot editor with Mono support..."
+scons platform=$PLATFORM target=editor module_mono_enabled=yes
+
+# Generate C# glue code
+echo "Generating C# glue code..."
+EDITOR_BIN=$(ls bin/godot.$PLATFORM.editor.*.mono 2>/dev/null | head -1)
+if [ -z "$EDITOR_BIN" ]; then
+    echo "Warning: Could not find editor binary"
+else
+    $EDITOR_BIN --headless --generate-mono-glue modules/mono/glue || echo "Warning: Glue generation failed"
+fi
+
+# Build C# assemblies
+echo "Building C# assemblies..."
+if [ -f "modules/mono/build_scripts/build_assemblies.py" ]; then
+    python3 modules/mono/build_scripts/build_assemblies.py --godot-output-dir=./bin --push-nupkgs-local ./bin/GodotSharp/NuPkgs || echo "Warning: Assembly build failed"
+else
+    echo "Warning: build_assemblies.py not found"
+fi
+
+# Copy GodotSharp assemblies to build directory
+echo "Copying GodotSharp assemblies to build directory..."
+mkdir -p "$BUILD_DIR/GodotSharp"
+if [ -d "bin/GodotSharp" ]; then
+    cp -r bin/GodotSharp "$BUILD_DIR/" || echo "Warning: Could not copy GodotSharp assemblies"
+fi
 
 echo ""
 echo "Build complete!"
-echo "Note: You may need to manually generate GodotSharp bindings by building the editor"
+echo "Library files are in: $BUILD_DIR/$PLATFORM_DIR"
+echo "GodotSharp assemblies are in: $BUILD_DIR/GodotSharp"
