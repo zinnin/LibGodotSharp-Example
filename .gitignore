@@ -16,6 +16,10 @@ godot/
 
 # Allow lib/ directory for built assemblies that should be committed
 !lib/
+!lib/**/*.so
+!lib/**/*.dll
+!lib/**/*.dylib
+!lib/**/*.lib
 
 # .NET artifacts
 *.user
