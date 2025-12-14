@@ -16,22 +16,24 @@ This C# example shows how to:
 ## Quick Start
 
 ```bash
-# Build Godot using the C# builder (takes 30-60 minutes)
-dotnet run --project GodotBuilder/GodotBuilder.csproj
-
-# Build and run the C# application
+# Run the example (no Godot build required - uses pre-built assemblies)
 cd src
 dotnet build
 dotnet run
+
+# Optional: Build Godot using the C# builder (takes 30-60 minutes)
+dotnet run --project GodotBuilder/GodotBuilder.csproj
 ```
 
 See [BUILD.md](BUILD.md) for detailed build instructions.
 
 ## Features
 
-- ✅ **C# Console Application**: Standard .NET console app that creates Godot UI
-- ✅ **Native Interop**: P/Invoke interfaces to Godot library functions
-- ✅ **3D Scene Setup**: Programmatically create Camera3D and MeshInstance3D
+- ✅ **C# Console Application**: Standard .NET console app that uses GodotSharp API
+- ✅ **GodotSharp Integration**: Full implementation using official GodotSharp bindings
+- ✅ **Built Assemblies**: Pre-built GodotSharp assemblies included (v4.6.0)
+- ✅ **3D Scene Setup**: Programmatically create Camera3D, MeshInstance3D, and lighting
+- ✅ **Material System**: StandardMaterial3D with color, metallic, and roughness properties
 - ✅ **Cross-Platform**: Supports Linux, macOS, and Windows
 - ✅ **Build Scripts**: Automated scripts to build Godot as a library
 - ✅ **C# Builder Tool**: Cross-platform C# builder with better debugging support
@@ -46,9 +48,14 @@ See [BUILD.md](BUILD.md) for detailed build instructions.
 │   └── README.md             # Builder documentation
 ├── src/                      # Example application
 │   ├── Program.cs            # Main entry point
-│   ├── GodotApplication.cs   # Application logic
-│   └── GodotNativeInterop.cs # Native library interface
+│   ├── GodotSharpExample.cs  # GodotSharp implementation
+│   ├── GodotApplication.cs   # Alternative simulation approach
+│   ├── GodotNativeInterop.cs # Native library interface
+│   └── GodotAssemblies/      # Pre-built GodotSharp assemblies
+│       ├── Api/              # GodotSharp.dll, GodotSharpEditor.dll
+│       └── Tools/            # Build tools
 ├── lib/                      # Built libraries (committed)
+│   └── windows/              # godot.windows.template_release.x86_64.dll
 ├── BUILD.md                  # Detailed build instructions
 └── README.md                 # This file
 ```
@@ -63,12 +70,18 @@ See [BUILD.md](BUILD.md) for detailed build instructions.
 
 ## Implementation Details
 
-This example demonstrates two approaches:
+This example demonstrates using the **GodotSharp Integration** approach with official C# bindings:
 
-1. **Direct Native Interop**: Using P/Invoke to call Godot C API functions
-2. **GodotSharp Integration**: Using the official C# bindings (when available)
+- **GodotSharpExample.cs**: Fully implemented using actual GodotSharp assemblies
+  - Validates assembly loading and type availability
+  - Demonstrates complete scene setup with Node3D, Camera3D, MeshInstance3D
+  - Shows material configuration with StandardMaterial3D
+  - Includes ready-to-use SceneSetup class for native integration
+  
+- **GodotApplication.cs**: Alternative simulation approach showing structure
+- **GodotNativeInterop.cs**: P/Invoke declarations for native library (when needed)
 
-The code includes both approaches with documentation showing how each works.
+The code uses pre-built GodotSharp assemblies (v4.6.0) from `src/GodotAssemblies/`.
 
 ## References
 
