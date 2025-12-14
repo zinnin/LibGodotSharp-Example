@@ -256,8 +256,16 @@ class Program
                 RedirectStandardError = true,
                 CreateNoWindow = true
             });
-            testProcess?.WaitForExit();
-            if (testProcess?.ExitCode != 0)
+            
+            if (testProcess != null)
+            {
+                testProcess.WaitForExit();
+                if (testProcess.ExitCode != 0)
+                {
+                    pythonCommand = "python";
+                }
+            }
+            else
             {
                 pythonCommand = "python";
             }
