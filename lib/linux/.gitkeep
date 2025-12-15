@@ -1,0 +1,3 @@
+# Placeholder for Linux native libraries
+# After running GodotBuilder on Linux, this directory will contain:
+#   libgodot.linuxbsd.template_release.x86_64.so

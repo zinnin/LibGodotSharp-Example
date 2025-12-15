@@ -1,0 +1,34 @@
+{
+  "profiles": {
+    "GodotBuilder": {
+      "commandName": "Project",
+      "commandLineArgs": ""
+    },
+    "Build All Platforms": {
+      "commandName": "Project",
+      "commandLineArgs": "--all"
+    },
+    "Build Linux Only": {
+      "commandName": "Project",
+      "commandLineArgs": "linuxbsd"
+    },
+    "Build Linux via WSL2 (Windows)": {
+      "commandName": "Executable",
+      "executablePath": "pwsh",
+      "commandLineArgs": "-ExecutionPolicy Bypass -File \"$(SolutionDir)Build-Linux.ps1\"",
+      "workingDirectory": "$(SolutionDir)"
+    },
+    "Build Windows Only": {
+      "commandName": "Project",
+      "commandLineArgs": "windows"
+    },
+    "Build macOS Only": {
+      "commandName": "Project",
+      "commandLineArgs": "macos"
+    },
+    "Show Help": {
+      "commandName": "Project",
+      "commandLineArgs": "--help"
+    }
+  }
+}

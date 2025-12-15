@@ -5,6 +5,29 @@
     <TargetFramework>net10.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Reference Include="GodotSharp">
+      <HintPath>GodotAssemblies/Api/Release/GodotSharp.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+    <Reference Include="GodotSharpEditor">
+      <HintPath>GodotAssemblies/Api/Release/GodotSharpEditor.dll</HintPath>
+      <Private>true</Private>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="../lib/windows/godot.windows.template_release.x86_64.dll">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>godot.windows.template_release.x86_64.dll</Link>
+    </None>
+    <None Include="Main.pck">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+      <Link>LibGodotSharpExample.pck</Link>
+    </None>
+  </ItemGroup>
 
 </Project>

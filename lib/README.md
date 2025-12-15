@@ -24,13 +24,36 @@ These built libraries are committed to the repository so that:
 
 ## Rebuilding
 
-To rebuild the libraries:
+To rebuild the libraries for your platform:
 
 ```bash
 dotnet run --project GodotBuilder/GodotBuilder.csproj
 ```
 
-This will take 30-60 minutes as it builds Godot from source.
+This will:
+1. Clone the Godot repository (if needed)
+2. Build Godot as a shared library for your current platform
+3. Build the Godot editor with Mono support
+4. Generate C# glue code
+5. Build GodotSharp assemblies
+6. Copy all artifacts to their respective directories
+
+**Build time:** 30-60 minutes depending on your system.
+
+### Platform-Specific Notes
+
+**Linux:**
+- The builder automatically detects Linux and builds for `platform=linuxbsd`
+- Requires: `scons`, `gcc/g++` or `clang`, `python3`, standard build tools
+- Outputs: `libgodot.linuxbsd.template_release.x86_64.so` to `lib/linux/`
+
+**Windows:**
+- Requires: Visual Studio 2019+ or MinGW-w64
+- Outputs: `godot.windows.template_release.x86_64.dll` to `lib/windows/`
+
+**macOS:**
+- Requires: Xcode command line tools
+- Outputs: `libgodot.macos.template_release.universal.dylib` to `lib/macos/`
 
 ## Note
 
