@@ -86,8 +86,10 @@ if ($LASTEXITCODE -ne 0) {
     Write-Host "     wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh" -ForegroundColor White
     Write-Host "     chmod +x dotnet-install.sh" -ForegroundColor White
     Write-Host "     ./dotnet-install.sh --channel 8.0" -ForegroundColor White
-    Write-Host "     echo 'export DOTNET_ROOT=`$HOME/.dotnet' >> ~/.bashrc" -ForegroundColor White
-    Write-Host "     echo 'export PATH=`$PATH:`$HOME/.dotnet' >> ~/.bashrc" -ForegroundColor White
+    $msg1 = "     echo 'export DOTNET_ROOT=`$HOME/.dotnet' >> ~/.bashrc"
+    Write-Host $msg1 -ForegroundColor White
+    $msg2 = "     echo 'export PATH=`$PATH:`$HOME/.dotnet' >> ~/.bashrc"
+    Write-Host $msg2 -ForegroundColor White
     Write-Host "     source ~/.bashrc" -ForegroundColor White
     Write-Host ""
     Write-Host "Attempting to continue anyway..." -ForegroundColor Yellow
